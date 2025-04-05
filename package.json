@@ -10,11 +10,12 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@auth0/auth0-vue": "^2.4.0",
     "axios": "^1.7.7",
     "element-plus": "^2.9.6",
     "serve": "^14.2.4",
     "vue": "^3.5.12",
-    "vue-router": "^4.4.5"
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.12.0",

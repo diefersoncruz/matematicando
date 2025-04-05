@@ -15,7 +15,7 @@
 <script setup>
 import { ref } from "vue";
 
-const tableData = ref([{ position: 1, name: "João", hits: 10 }]);
+const tableData = ref([]);
 </script>
 
 <style scoped>
