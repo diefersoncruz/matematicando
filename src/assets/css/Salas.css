@@ -1,0 +1,14 @@
+.salas-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.sala-nome {
+  font-weight: bold;
+}
+
+.sala-data {
+  margin-left: 10px;
+}

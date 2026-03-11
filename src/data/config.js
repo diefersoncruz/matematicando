@@ -12,5 +12,5 @@ export var configuracoes = {
   },
   exibicao: {
     exibirRespostaCerta: false,
-  }
+  },
 };
