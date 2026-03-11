@@ -68,75 +68,89 @@
     </div>
   </div>
 </template>
-
-<script>
+<script setup>
+import { ref, onMounted, onBeforeUnmount, computed, nextTick } from "vue";
 import { iniciarJogo, pararJogo } from "../services/controler.js";
 import { gerarOperacao, validarResultado } from "../services/game.js";
 import Ranking from "@/components/Ranking.vue";
 
-export default {
-  components: {
-    Ranking,
-  },
-  data() {
-    return {
-      acertos: 0,
-      erros: 0,
-      fator1: 0,
-      fator2: 0,
-      operador: "+",
-      respostaUsuario: 0,
-      jogoEmAndamento: false,
-      tempoFormatado: "00:00",
-      intervaloCronometro: null,
-      tempoSegundos: 0,
-    };
-  },
-  methods: {
-    handleDocumentKeydown(event) {
-      if (event.key === "Enter" && event.target === document.body) {
-        this.verificarResposta();
-        event.preventDefault(); // Prevent default Enter behavior (like form submission)
-      }
-    },
-    iniciarOuPararJogo() {
-      if (this.jogoEmAndamento) {
-        pararJogo(true, this.atualizarDados);
-        clearInterval(this.intervaloCronometro);
-        this.intervaloCronometro = null;
-      } else {
-        iniciarJogo(this.atualizarDados);
-        this.tempoSegundos = 0;
-        this.intervaloCronometro = setInterval(() => {
-          this.tempoSegundos++;
-        }, 1000);
-      }
-    },
+const acertos = ref(0);
+const erros = ref(0);
+const fator1 = ref(0);
+const fator2 = ref(0);
+const operador = ref("+");
+const respostaUsuario = ref(0);
+const jogoEmAndamento = ref(false);
+const tempoSegundos = ref(0);
+const intervaloCronometro = ref(null);
+const inputResultado = ref(null);
 
-    verificarResposta() {
-      if (this.jogoEmAndamento) {
-        validarResultado(this.atualizarDados);
-        this.$nextTick(() => {
-          this.$refs.inputResultado.focus(); // Redefine o foco no input após a validação
-        });
-      }
-    },
+const tempoFormatado = computed(() => {
+  const minutos = Math.floor(tempoSegundos.value / 60);
+  const segundos = tempoSegundos.value % 60;
+  return `${String(minutos).padStart(2, "0")}:${String(segundos).padStart(
+    2,
+    "0"
+  )}`;
+});
 
-    atualizarDados(campo, valor = null) {
-      if (valor !== null) {
-        this[campo] = valor;
-      }
-      return this[campo];
-    },
-  },
-  mounted() {
-    gerarOperacao(this.atualizarDados);
-    // Attach the event listener
-    document.addEventListener("keydown", this.handleDocumentKeydown);
-  },
-  beforeUnmount() {
-    // Remove the event listener to prevent memory leaks
-    document.removeEventListener("keydown", this.handleDocumentKeydown);
-  },
+const atualizarDados = (campo, valor = null) => {
+  if (valor !== null) {
+    if (campo === "acertos") acertos.value = valor;
+    if (campo === "erros") erros.value = valor;
+    if (campo === "fator1") fator1.value = valor;
+    if (campo === "fator2") fator2.value = valor;
+    if (campo === "operador") operador.value = valor;
+    if (campo === "respostaUsuario") respostaUsuario.value = valor;
+    if (campo === "jogoEmAndamento") jogoEmAndamento.value = valor;
+    if (campo === "tempoSegundos") tempoSegundos.value = valor;
+  }
+  if (campo === "acertos") return acertos.value;
+  if (campo === "erros") return erros.value;
+  if (campo === "fator1") return fator1.value;
+  if (campo === "fator2") return fator2.value;
+  if (campo === "operador") return operador.value;
+  if (campo === "respostaUsuario") return respostaUsuario.value;
+  if (campo === "jogoEmAndamento") return jogoEmAndamento.value;
+  if (campo === "tempoSegundos") return tempoSegundos.value;
 };
+
+const handleDocumentKeydown = (event) => {
+  if (event.key === "Enter" && event.target === document.body) {
+    verificarResposta();
+    event.preventDefault();
+  }
+};
+
+const iniciarOuPararJogo = () => {
+  if (jogoEmAndamento.value) {
+    pararJogo(true, atualizarDados);
+    clearInterval(intervaloCronometro.value);
+    intervaloCronometro.value = null;
+  } else {
+    iniciarJogo(atualizarDados);
+    tempoSegundos.value = 0;
+    intervaloCronometro.value = setInterval(() => {
+      tempoSegundos.value++;
+    }, 1000);
+  }
+};
+
+const verificarResposta = () => {
+  if (jogoEmAndamento.value) {
+    validarResultado(atualizarDados);
+    nextTick(() => {
+      inputResultado.value.focus();
+    });
+  }
+};
+
+onMounted(() => {
+  gerarOperacao(atualizarDados);
+  document.addEventListener("keydown", handleDocumentKeydown);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("keydown", handleDocumentKeydown);
+});
 </script>
