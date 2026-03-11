@@ -8,6 +8,7 @@ import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: "/matematicando/",
   plugins: [
     vue(),
     AutoImport({
