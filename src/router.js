@@ -7,8 +7,8 @@ import { useAuth0 } from "@auth0/auth0-vue";
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: "/", component: HomeView, meta: { requiresAuth: true } },
-    { path: "/salas", component: SalasView, meta: { requiresAuth: true } },
+    { path: "/", component: HomeView, meta: { requiresAuth: false } },
+    { path: "/salas", component: SalasView, meta: { requiresAuth: false } },
   ],
 });
 
