@@ -3,10 +3,11 @@
     <header class="app-header">
       <nav class="nav-menu">
         <router-link to="/" class="nav-link">Salas</router-link>
+        <router-link to="/minhas-salas" class="nav-link">Minhas Salas</router-link>
         <router-link to="/jogo" class="nav-link">Jogo</router-link>
       </nav>
       
-      <UserProfile @show-login="showLoginModal = true" />
+      <UserProfile ref="userProfileRef" @show-login="showLoginModal = true" />
     </header>
     
     <main class="main-content">
@@ -31,9 +32,14 @@ import UserProfile from './components/UserProfile.vue'
 import LoginModal from './components/LoginModal.vue'
 
 const showLoginModal = ref(false);
+const userProfileRef = ref(null);
 
 const handleLoginSuccess = () => {
-  // handle login success logic here
+  // Update UserProfile to reflect logged-in state
+  if (userProfileRef.value) {
+    userProfileRef.value.updateUser();
+  }
+  showLoginModal.value = false;
 }
 
 const permanent = ref(false);

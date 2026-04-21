@@ -142,13 +142,22 @@ export const authService = {
     return supabase.auth.onAuthStateChange(callback);
   },
 
-  // Simple authentication check (for demo purposes)
+  // Simple authentication (for demo purposes)
   async simpleAuth(username, password) {
     try {
+      // Generate a proper UUID for the user
+      const generateUUID = () => {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          const r = Math.random() * 16 | 0;
+          const v = c == 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      };
+
       // For now, just store in localStorage without Supabase auth
       // This is a simplified version for testing
       const user = {
-        id: `user_${Date.now()}`,
+        id: generateUUID(),
         username: username,
         email: `${username}@matematicando.local`
       };

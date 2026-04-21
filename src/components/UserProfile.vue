@@ -61,7 +61,17 @@ const logout = async () => {
 
 const loadCurrentUser = () => {
   currentUser.value = authService.getCurrentUser();
+  console.log('UserProfile: Current user loaded:', currentUser.value);
 };
+
+const updateUser = () => {
+  loadCurrentUser();
+};
+
+// Expose method for parent components to call
+defineExpose({
+  updateUser
+});
 
 // Lifecycle
 onMounted(() => {

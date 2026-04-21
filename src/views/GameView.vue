@@ -1,7 +1,11 @@
 <template>
   <div class="container">
     <div class="div-esquerda">
-      <Ranking :currentRoom="selectedRoom" @change-room="changeRoom" />
+      <Ranking 
+        ref="rankingRef"
+        :currentRoom="selectedRoom" 
+        @change-room="changeRoom"
+      />
     </div>
     <div class="div-direita">
       <!-- No Room Selected State -->
@@ -243,6 +247,8 @@ const goToCreateRoom = () => {
   router.push('/salas/criar');
 };
 
+const rankingRef = ref(null);
+
 const saveGameScore = async () => {
   if (!selectedRoom.value) return;
   
@@ -258,7 +264,11 @@ const saveGameScore = async () => {
     );
     
     // Trigger ranking refresh in the Ranking component
-    // This will be handled by the component's watch mechanism
+    if (rankingRef.value) {
+      setTimeout(() => {
+        rankingRef.value.refreshRanking();
+      }, 500); // Small delay to ensure score is saved
+    }
   } catch (error) {
     console.error('Error saving game score:', error);
     // Don't show error to user to avoid interrupting game flow

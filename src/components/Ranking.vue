@@ -242,20 +242,18 @@ const loadRankingData = async () => {
   }
 };
 
-// Watch for room changes
-watch(() => props.currentRoom, (newRoom) => {
-  if (newRoom) {
-    loadRankingData();
-  } else {
-    rankingData.value = [];
-  }
-}, { immediate: true });
+// Expose methods for parent components
+defineExpose({
+  refreshRanking: loadRankingData
+});
 
-// Load data on mount
+// Lifecycle
 onMounted(() => {
-  if (props.currentRoom) {
-    loadRankingData();
-  }
+  loadRankingData();
+});
+
+watch(() => props.currentRoom, () => {
+  loadRankingData();
 });
 </script>
 
