@@ -167,6 +167,17 @@
             </svg>
             Jogar
           </button>
+          <button 
+            v-if="userRoom.role === 'admin'" 
+            @click.stop="editRoomConfiguration(userRoom.salas)" 
+            class="btn btn-config"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 1v6m0 6v6m4.22-13.22l4.24 4.24M1.54 7.76l4.24 4.24M20.46 16.24l-4.24 4.24M7.76 1.54l-4.24 4.24"/>
+            </svg>
+            Configurar
+          </button>
           <button @click.stop="leaveRoom(userRoom)" class="btn btn-leave">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
@@ -193,6 +204,22 @@
       @sala-created="handleRoomCreated"
       @cancelled="showCreateRoom = false"
     />
+
+    <!-- Room Configuration Modal -->
+    <RoomConfigurationModal
+      :showModal="showConfigModal"
+      :room="selectedRoom"
+      :isEditing="true"
+      @close="closeConfigModal"
+      @saved="handleConfigurationSaved"
+    />
+
+    <!-- Login Modal -->
+    <LoginModal
+      :showModal="showLoginModal"
+      @login-success="handleLoginSuccess"
+      @cancelled="showLoginModal = false"
+    />
   </div>
 </template>
 
@@ -203,6 +230,8 @@ import { userRoomService } from '@/services/userRoomService.js';
 import { authService } from '@/services/authService.js';
 import RoomSelection from '@/components/RoomSelection.vue';
 import SalaFormModal from '@/components/SalaFormModal.vue';
+import RoomConfigurationModal from '@/components/RoomConfigurationModal.vue';
+import LoginModal from '@/components/LoginModal.vue';
 
 const router = useRouter();
 
@@ -213,6 +242,9 @@ const loading = ref(false);
 const error = ref(null);
 const showJoinRoom = ref(false);
 const showCreateRoom = ref(false);
+const showConfigModal = ref(false);
+const showLoginModal = ref(false);
+const selectedRoom = ref(null);
 
 // Methods
 const loadUserRooms = async () => {
@@ -220,11 +252,11 @@ const loadUserRooms = async () => {
   error.value = null;
   
   try {
-    console.log('Loading user rooms...');
+    console.log('=== Loading user rooms debug start ===');
     
     // Check if user is authenticated
     const currentUser = authService.getCurrentUser();
-    console.log('Current user:', currentUser);
+    console.log('Current user from authService:', currentUser);
     
     if (!currentUser) {
       console.log('No authenticated user found');
@@ -232,16 +264,35 @@ const loadUserRooms = async () => {
       return;
     }
     
+    console.log('User ID:', currentUser.id);
+    console.log('User Username:', currentUser.username);
+    
+    // Try to get user rooms
+    console.log('Calling userRoomService.getUserRooms()...');
     const rooms = await userRoomService.getUserRooms();
-    console.log('User rooms loaded:', rooms);
+    console.log('User rooms loaded successfully:', rooms);
+    console.log('Number of rooms:', rooms.length);
+    
     userRooms.value = rooms;
     
-    // Load stats
-    const userStats = await userRoomService.getUserRoomStats();
-    console.log('User stats loaded:', userStats);
-    stats.value = userStats;
+    // Try to get stats (this might be failing)
+    console.log('Calling userRoomService.getUserRoomStats()...');
+    try {
+      const userStats = await userRoomService.getUserRoomStats();
+      console.log('User stats loaded successfully:', userStats);
+      stats.value = userStats;
+    } catch (statsError) {
+      console.error('Error loading stats (but rooms loaded):', statsError);
+      // Don't fail the whole loading if stats fail
+      stats.value = null;
+    }
+    
+    console.log('=== Loading user rooms debug end ===');
   } catch (err) {
-    console.error('Error loading user rooms:', err);
+    console.error('=== Error loading user rooms ===');
+    console.error('Error details:', err);
+    console.error('Error message:', err.message);
+    console.error('Error stack:', err.stack);
     error.value = err.message || 'Não foi possível carregar suas salas';
   } finally {
     loading.value = false;
@@ -308,10 +359,30 @@ const handleRoomCreated = async () => {
   showCreateRoom.value = false;
 };
 
+const editRoomConfiguration = (room) => {
+  selectedRoom.value = room;
+  showConfigModal.value = true;
+};
+
+const closeConfigModal = () => {
+  showConfigModal.value = false;
+  selectedRoom.value = null;
+};
+
+const handleConfigurationSaved = (config) => {
+  console.log('Configuration saved:', config);
+  // Could show a success message or refresh data if needed
+};
+
+const handleLoginSuccess = () => {
+  showLoginModal.value = false;
+  loadUserRooms();
+};
+
 // Lifecycle
 onMounted(() => {
   if (!authService.isAuthenticated()) {
-    router.push('/jogo'); // Redirect to game if not authenticated
+    showLoginModal.value = true; // Show login modal if not authenticated
     return;
   }
   
@@ -622,6 +693,11 @@ onMounted(() => {
   background: #fef2f2;
   color: #dc2626;
   border: 1px solid #fecaca;
+}
+
+.btn-config {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
 }
 
 .btn:hover {
