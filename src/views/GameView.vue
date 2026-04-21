@@ -4,6 +4,58 @@
       <Ranking />
     </div>
     <div class="div-direita">
+      <!-- Room Info Header -->
+      <div class="room-info" v-if="selectedRoom">
+        <div class="room-details">
+          <div class="room-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            <span>{{ selectedRoom.nome }}</span>
+          </div>
+          <div class="room-type">{{ getRoomTypeLabel(selectedRoom.tipo) }}</div>
+        </div>
+        <button @click="changeRoom" class="btn-change-room">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12h18m-9-9v18"/>
+          </svg>
+          Trocar Sala
+        </button>
+      </div>
+      <!-- No Room Selected State -->
+      <div class="no-room-state" v-else>
+        <div class="no-room-content">
+          <div class="no-room-icon">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+          </div>
+          <h2>Selecione uma Sala para Jogar</h2>
+          <p>Para começar a jogar, você precisa selecionar uma sala de matemática.</p>
+          <p class="sub-text">Escolha uma sala existente ou crie uma nova sala para iniciar sua sessão de jogo.</p>
+          <div class="no-room-actions">
+            <button @click="showRoomSelection = true" class="btn btn-primary btn-large">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              Selecionar Sala
+            </button>
+            <button @click="goToCreateRoom" class="btn btn-secondary btn-large">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Criar Nova Sala
+            </button>
+          </div>
+        </div>
+      </div>
       <div class="opcoes">
         <div id="divAcertos" class="score-box score-box--green">
           <label for="inputAcertos" class="score-label">Acertos:</label>
@@ -53,8 +105,9 @@
           id="btnIniciarPararJogo"
           class="btn btn-iniciar"
           @click="iniciarOuPararJogo"
+          :disabled="!selectedRoom"
         >
-          {{ jogoEmAndamento ? "Parar Jogo" : "Iniciar Jogo" }}
+          {{ jogoEmAndamento ? "Parar Jogo" : selectedRoom ? "Iniciar Jogo" : "Selecione uma Sala" }}
         </button>
         <button
           id="btn-responder"
@@ -67,12 +120,23 @@
       </div>
     </div>
   </div>
+
+  <!-- Room Selection Modal -->
+  <RoomSelection 
+    :showRoomSelection="showRoomSelection"
+    @room-selected="handleRoomSelected"
+    @cancelled="handleRoomSelectionCancelled"
+  />
 </template>
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed, nextTick } from "vue";
+import { useRouter } from "vue-router";
 import { iniciarJogo, pararJogo } from "../services/controler.js";
 import { gerarOperacao, validarResultado } from "../services/game.js";
 import Ranking from "@/components/Ranking.vue";
+import RoomSelection from "@/components/RoomSelection.vue";
+
+const router = useRouter();
 
 const acertos = ref(0);
 const erros = ref(0);
@@ -84,6 +148,10 @@ const jogoEmAndamento = ref(false);
 const tempoSegundos = ref(0);
 const intervaloCronometro = ref(null);
 const inputResultado = ref(null);
+
+// Room management
+const selectedRoom = ref(null);
+const showRoomSelection = ref(false);
 
 const tempoFormatado = computed(() => {
   const minutos = Math.floor(tempoSegundos.value / 60);
@@ -128,12 +196,66 @@ const iniciarOuPararJogo = () => {
     clearInterval(intervaloCronometro.value);
     intervaloCronometro.value = null;
   } else {
+    if (!selectedRoom.value) {
+      showRoomSelection.value = true;
+      return;
+    }
     iniciarJogo(atualizarDados);
     tempoSegundos.value = 0;
     intervaloCronometro.value = setInterval(() => {
       tempoSegundos.value++;
     }, 1000);
   }
+};
+
+// Room management methods
+const handleRoomSelected = (room) => {
+  selectedRoom.value = room;
+  showRoomSelection.value = false;
+  
+  // Store room context for game session
+  localStorage.setItem('currentRoom', JSON.stringify(room));
+  
+  // Auto-start game after room selection
+  nextTick(() => {
+    iniciarJogo(atualizarDados);
+    tempoSegundos.value = 0;
+    intervaloCronometro.value = setInterval(() => {
+      tempoSegundos.value++;
+    }, 1000);
+  });
+};
+
+const handleRoomSelectionCancelled = () => {
+  showRoomSelection.value = false;
+};
+
+const changeRoom = () => {
+  if (jogoEmAndamento.value) {
+    // Ask user to stop game first
+    if (confirm('Para trocar de sala, você precisa parar o jogo atual. Deseja continuar?')) {
+      pararJogo(true, atualizarDados);
+      clearInterval(intervaloCronometro.value);
+      intervaloCronometro.value = null;
+      showRoomSelection.value = true;
+    }
+  } else {
+    showRoomSelection.value = true;
+  }
+};
+
+const getRoomTypeLabel = (tipo) => {
+  const tipos = {
+    aula: "Aula Regular",
+    estudo: "Sala de Estudo",
+    prova: "Sala de Prova",
+    tutoria: "Tutoria"
+  };
+  return tipos[tipo] || "Outro";
+};
+
+const goToCreateRoom = () => {
+  router.push('/salas/criar');
 };
 
 const verificarResposta = () => {
@@ -146,6 +268,24 @@ const verificarResposta = () => {
 };
 
 onMounted(() => {
+  // Restore room from localStorage if available
+  const savedRoom = localStorage.getItem('currentRoom');
+  if (savedRoom) {
+    try {
+      selectedRoom.value = JSON.parse(savedRoom);
+    } catch (error) {
+      console.error('Error parsing saved room:', error);
+      localStorage.removeItem('currentRoom');
+    }
+  }
+  
+  // Show room selection if no room is available (with small delay for data loading)
+  if (!selectedRoom.value) {
+    setTimeout(() => {
+      showRoomSelection.value = true;
+    }, 100);
+  }
+  
   gerarOperacao(atualizarDados);
   document.addEventListener("keydown", handleDocumentKeydown);
 });
@@ -154,3 +294,141 @@ onBeforeUnmount(() => {
   document.removeEventListener("keydown", handleDocumentKeydown);
 });
 </script>
+
+<style scoped>
+/* Room Info Header */
+.room-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.room-details {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.room-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.room-type {
+  font-size: 14px;
+  opacity: 0.9;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.btn-change-room {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.btn-change-room:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+/* No Room State */
+.no-room-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.no-room-content {
+  text-align: center;
+  background: white;
+  padding: 48px;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  max-width: 600px;
+}
+
+.no-room-icon {
+  color: #d1d5db;
+  margin-bottom: 32px;
+}
+
+.no-room-content h2 {
+  margin: 0 0 16px 0;
+  font-size: 28px;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.no-room-content p {
+  margin: 0 0 12px 0;
+  color: #6b7280;
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+.no-room-content .sub-text {
+  margin: 0 0 32px 0;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.no-room-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Update button disabled state */
+.btn-iniciar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-iniciar:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .room-info {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .room-details {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .btn-change-room {
+    width: 100%;
+    justify-content: center;
+  }
+}
+</style>
