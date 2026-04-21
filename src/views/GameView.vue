@@ -1,31 +1,11 @@
 <template>
   <div class="container">
     <div class="div-esquerda">
-      <Ranking />
+      <Ranking :currentRoom="selectedRoom" @change-room="changeRoom" />
     </div>
     <div class="div-direita">
-      <!-- Room Info Header -->
-      <div class="room-info" v-if="selectedRoom">
-        <div class="room-details">
-          <div class="room-badge">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-              <polyline points="17 21 17 13 7 13 7 21"/>
-              <polyline points="7 3 7 8 15 8"/>
-            </svg>
-            <span>{{ selectedRoom.nome }}</span>
-          </div>
-          <div class="room-type">{{ getRoomTypeLabel(selectedRoom.tipo) }}</div>
-        </div>
-        <button @click="changeRoom" class="btn-change-room">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 12h18m-9-9v18"/>
-          </svg>
-          Trocar Sala
-        </button>
-      </div>
       <!-- No Room Selected State -->
-      <div class="no-room-state" v-else>
+      <div class="no-room-state" v-if="!selectedRoom">
         <div class="no-room-content">
           <div class="no-room-icon">
             <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -133,6 +113,8 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import { iniciarJogo, pararJogo } from "../services/controler.js";
 import { gerarOperacao, validarResultado } from "../services/game.js";
+import { rankingService } from "../services/rankingService.js";
+import { authService } from "../services/authService.js";
 import Ranking from "@/components/Ranking.vue";
 import RoomSelection from "@/components/RoomSelection.vue";
 
@@ -195,6 +177,9 @@ const iniciarOuPararJogo = () => {
     pararJogo(true, atualizarDados);
     clearInterval(intervaloCronometro.value);
     intervaloCronometro.value = null;
+    
+    // Save score when game ends
+    saveGameScore();
   } else {
     if (!selectedRoom.value) {
       showRoomSelection.value = true;
@@ -258,6 +243,28 @@ const goToCreateRoom = () => {
   router.push('/salas/criar');
 };
 
+const saveGameScore = async () => {
+  if (!selectedRoom.value) return;
+  
+  const playerName = authService.getCurrentUsername();
+  
+  try {
+    await rankingService.savePlayerScore(
+      selectedRoom.value.id,
+      playerName,
+      acertos.value,
+      erros.value,
+      tempoSegundos.value
+    );
+    
+    // Trigger ranking refresh in the Ranking component
+    // This will be handled by the component's watch mechanism
+  } catch (error) {
+    console.error('Error saving game score:', error);
+    // Don't show error to user to avoid interrupting game flow
+  }
+};
+
 const verificarResposta = () => {
   if (jogoEmAndamento.value) {
     validarResultado(atualizarDados);
@@ -296,61 +303,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* Room Info Header */
-.room-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 16px 20px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.room-details {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.room-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-weight: 500;
-}
-
-.room-type {
-  font-size: 14px;
-  opacity: 0.9;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 4px 12px;
-  border-radius: 12px;
-}
-
-.btn-change-room {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.btn-change-room:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
-}
 
 /* No Room State */
 .no-room-state {
@@ -426,9 +378,6 @@ onBeforeUnmount(() => {
     gap: 8px;
   }
   
-  .btn-change-room {
-    width: 100%;
-    justify-content: center;
-  }
+
 }
 </style>
