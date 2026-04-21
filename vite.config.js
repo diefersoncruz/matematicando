@@ -21,6 +21,7 @@ export default defineConfig({
   define: {
     __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: "false",
   },
+  envPrefix: 'matematicando_',
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
