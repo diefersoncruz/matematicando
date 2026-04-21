@@ -225,8 +225,8 @@ export default {
         return;
       }
 
-      if (this.sala.nome.length < 3) {
-        this.errors.nome = "O nome deve ter pelo menos 3 caracteres";
+      if (this.sala.nome.length < 2) {
+        this.errors.nome = "O nome deve ter pelo menos 2 caracteres";
         this.submitting = false;
         return;
       }
