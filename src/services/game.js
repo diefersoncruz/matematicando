@@ -45,13 +45,19 @@ let historicoOperacoes = [];
 let operadorMatematicoAtual;
 
 async function loadConfig(salaId = null) {
+  console.log('loadConfig chamado com salaId:', salaId);
   if (salaId) {
+    console.log('Carregando configurações para a sala:', salaId);
     configuracoes = await configService.getRoomConfig(salaId);
+    console.log('Configurações carregadas:', configuracoes);
     // Update operations enabled status
     operacoes[1].habilitado = configuracoes.operacoesPermitidas.operacoesDeDivisao;
     operacoes[2].habilitado = configuracoes.operacoesPermitidas.operacoesDeMultiplicacao;
     operacoes[3].habilitado = configuracoes.operacoesPermitidas.operacoesDeAdicao;
     operacoes[4].habilitado = configuracoes.operacoesPermitidas.operacoesDeSubtracao;
+    console.log('Operações atualizadas:', operacoes);
+  } else {
+    console.log('Nenhum salaId fornecido, usando configurações padrão');
   }
 }
 
@@ -153,4 +159,8 @@ function zerarPontuacao(atualizarDados) {
   atualizarDados("erros", 0);
 }
 
-export { gerarOperacao, validarResultado, zerarPontuacao, loadConfig };
+function getConfig() {
+  return configuracoes;
+}
+
+export { gerarOperacao, validarResultado, zerarPontuacao, loadConfig, getConfig };

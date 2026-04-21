@@ -189,7 +189,7 @@ const iniciarOuPararJogo = () => {
       showRoomSelection.value = true;
       return;
     }
-    iniciarJogo(atualizarDados);
+    iniciarJogo(atualizarDados, selectedRoom.value.id);
     tempoSegundos.value = 0;
     intervaloCronometro.value = setInterval(() => {
       tempoSegundos.value++;
@@ -207,7 +207,7 @@ const handleRoomSelected = (room) => {
   
   // Auto-start game after room selection
   nextTick(() => {
-    iniciarJogo(atualizarDados);
+    iniciarJogo(atualizarDados, room.id);
     tempoSegundos.value = 0;
     intervaloCronometro.value = setInterval(() => {
       tempoSegundos.value++;

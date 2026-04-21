@@ -1,23 +1,5 @@
-import { gerarOperacao, zerarPontuacao, loadConfig } from "./game.js";
+import { gerarOperacao, zerarPontuacao, loadConfig, getConfig } from "./game.js";
 import { configService } from "./configService.js";
-
-// Import the configuracoes variable from game.js
-let configuracoes = {
-  limiteTempo: 60,
-  limiteFatorA: 10,
-  limiteNegativoFatorA: 0,
-  limiteFatorB: 10,
-  limiteNegativoFatorB: 0,
-  operacoesPermitidas: {
-    operacoesDeDivisao: true,
-    operacoesDeMultiplicacao: true,
-    operacoesDeAdicao: true,
-    operacoesDeSubtracao: true,
-  },
-  exibicao: {
-    exibirRespostaCerta: false,
-  },
-};
 
 let intervalo;
 let tempoRestante;
@@ -32,13 +14,18 @@ function formatarTempo(segundos) {
 }
 
 async function iniciarJogo(atualizarDados, salaId = null) {
+  console.log('iniciarJogo chamado com salaId:', salaId);
   if (confirm("Pronto para começar?")) {
     // Load configuration from Supabase if salaId is provided
     if (salaId) {
+      console.log('Carregando configurações da sala:', salaId);
       await loadConfig(salaId);
     }
     
+    const configuracoes = getConfig();
+    console.log('Configurações obtidas após loadConfig:', configuracoes);
     tempoRestante = configuracoes.limiteTempo;
+    console.log('Tempo limite configurado:', tempoRestante);
     atualizarDados("jogoEmAndamento", true);
     atualizarDados("tempoFormatado", formatarTempo(tempoRestante));
 
@@ -70,9 +57,4 @@ function iniciarCronometro(atualizarDados) {
   }, 1000);
 }
 
-// Get current configuration
-function getConfig() {
-  return configuracoes;
-}
-
-export { iniciarJogo, pararJogo, getConfig };
+export { iniciarJogo, pararJogo };
