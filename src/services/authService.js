@@ -1,5 +1,8 @@
 import { supabase, handleSupabaseError } from './supabase.js';
 
+// Cache busting - force reload
+console.log('authService.js loaded - version 2025-04-21-01-45');
+
 export const authService = {
   // Register a new user
   async register(username, password) {
@@ -48,13 +51,29 @@ export const authService = {
 
       if (error) throw error;
 
-      // Store user info in localStorage
+      // Store user info in localStorage with consistent ID based on username
       if (data.user) {
+        // Generate consistent ID based on username (not Supabase UUID)
+        const consistentId = `user-${username.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+        
+        console.log('=== authService Login Debug ===');
+        console.log('Username:', username);
+        console.log('Supabase user ID:', data.user.id);
+        console.log('Generated consistent ID:', consistentId);
+        
         localStorage.setItem('currentUser', JSON.stringify({
-          id: data.user.id,
+          id: consistentId,
+          username: username,
+          email: data.user.email,
+          supabaseId: data.user.id // Keep Supabase ID for reference if needed
+        }));
+        
+        console.log('Stored in localStorage:', {
+          id: consistentId,
           username: username,
           email: data.user.email
-        }));
+        });
+        console.log('=== End authService Login Debug ===');
       }
 
       return data;
@@ -145,28 +164,41 @@ export const authService = {
   // Simple authentication (for demo purposes)
   async simpleAuth(username, password) {
     try {
-      // Generate a proper UUID for the user
-      const generateUUID = () => {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-          const r = Math.random() * 16 | 0;
-          const v = c == 'x' ? r : (r & 0x3 | 0x8);
-          return v.toString(16);
-        });
-      };
+      
+      // Simple hash function for demo (in production use proper hashing)
+      const hashPassword = (pwd) => btoa(pwd + 'salt');
+      
+      // First, check if user exists in our database
+      const { data: existingUser, error: userError } = await supabase
+        .from('users')
+        .select('id, username, password_hash, created_at')
+        .eq('username', username)
+        .single();
 
-      // For now, just store in localStorage without Supabase auth
-      // This is a simplified version for testing
-      const user = {
-        id: generateUUID(),
-        username: username,
-        email: `${username}@matematicando.local`
-      };
+      let user;
+      
+      if (existingUser) {
+        // User exists, validate password
+        const hashedPassword = hashPassword(password);
+        
+        if (existingUser.password_hash !== hashedPassword) {
+          throw new Error('Senha incorreta');
+        }
+        
+        user = {
+          id: existingUser.id,
+          username: existingUser.username,
+          email: `${username}@matematicando.local`
+        };
+      } else {
+        throw new Error('Usuário não encontrado');
+      }
 
       localStorage.setItem('currentUser', JSON.stringify(user));
       
       return { user };
     } catch (error) {
-      console.error('Error in simple auth:', error);
+      console.error('Erro na autenticação simples:', error);
       throw error;
     }
   },

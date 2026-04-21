@@ -426,8 +426,8 @@ const submitForm = async () => {
     // Get current user
     const currentUser = authService.getCurrentUser();
     if (currentUser) {
-      // Join the room as admin
-      await userRoomService.joinRoom(createdSala.id, 'admin');
+      // Join the room as admin (all users are admins)
+      await userRoomService.joinRoom(createdSala.id);
       console.log('User joined room as admin');
     }
     

@@ -42,21 +42,41 @@ export const salasService = {
   // Create new sala
   async createSala(salaData) {
     try {
+      console.log('=== salasService.createSala Debug ===');
+      
+      // Get current user ID to set as creator
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      console.log('Current user from localStorage:', currentUser);
+      
+      const createdBy = currentUser?.id || null;
+      console.log('Created by ID:', createdBy);
+      console.log('Created by type:', typeof createdBy);
+
+      const salaDataToInsert = {
+        nome: salaData.nome,
+        descricao: salaData.descricao || null,
+        data_expiracao: salaData.dataExpiracao || null,
+        capacidade: salaData.capacidade ? parseInt(salaData.capacidade) : null,
+        tipo: salaData.tipo || 'aula',
+        created_by: createdBy,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log('Sala data to insert:', salaDataToInsert);
+
       const { data, error } = await supabase
         .from('salas')
-        .insert([{
-          nome: salaData.nome,
-          descricao: salaData.descricao || null,
-          data_expiracao: salaData.dataExpiracao || null,
-          capacidade: salaData.capacidade ? parseInt(salaData.capacidade) : null,
-          tipo: salaData.tipo || 'aula',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
+        .insert([salaDataToInsert])
         .select()
         .single();
 
       if (error) throw error;
+      
+      console.log('Sala created successfully:', data);
+      console.log('Sala created_by field:', data.created_by);
+      console.log('=== End salasService.createSala Debug ===');
+      
       return data;
     } catch (error) {
       console.error('Error creating sala:', error);

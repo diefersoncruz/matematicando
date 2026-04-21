@@ -1,19 +1,67 @@
 import { supabase, handleSupabaseError } from './supabase.js';
+import { userIdUtils } from '@/utils/userIdUtils.js';
+import { userIdMigration } from '@/utils/userIdMigration.js';
 
 export const userRoomService = {
   // Get all rooms for the current user
   async getUserRooms() {
     try {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-      if (!currentUser) {
+      console.log('=== userRoomService.getUserRooms() debug start ===');
+      
+      // Debug user ID storage
+      userIdUtils.debugUserIdStorage();
+      
+      // Get consistent user ID
+      const userId = userIdUtils.ensureConsistentUserId();
+      
+      if (!userId) {
+        console.log('No valid user ID found');
         throw new Error('User not authenticated');
       }
+
+      console.log('Validated user ID:', userId);
+
+      // Get username for migration
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      const username = currentUser?.username || 'unknown';
+
+      // Check if migration is needed and perform it
+      console.log('=== Checking migration need ===');
+      const migrationNeeded = await userIdMigration.needsMigration(userId, username);
+      
+      if (migrationNeeded) {
+        console.log('Migration needed, attempting auto-migration...');
+        const migrationSuccess = await userIdMigration.autoMigrateIfNeeded(userId, username);
+        
+        if (!migrationSuccess) {
+          console.error('Auto-migration failed, but continuing with normal flow');
+        }
+      }
+
+      // Debug: Check all user_rooms entries for this user (including inactive)
+      console.log('=== Debug: Checking all user_rooms entries ===');
+      const { data: allUserRooms, error: allUserRoomsError } = await supabase
+        .from('user_rooms')
+        .select('*')
+        .eq('user_id', userId);
+      
+      console.log('All user_rooms for this user:', allUserRooms);
+      console.log('All user_rooms error:', allUserRoomsError);
+      
+      // Debug: Check if there are any entries at all in user_rooms table
+      const { data: allRooms, error: allRoomsError } = await supabase
+        .from('user_rooms')
+        .select('*')
+        .limit(5);
+      
+      console.log('Sample user_rooms data:', allRooms);
+      console.log('Sample user_rooms error:', allRoomsError);
 
       // First get user's room associations
       const { data: userRoomData, error: userRoomError } = await supabase
         .from('user_rooms')
         .select('*')
-        .eq('user_id', currentUser.id)
+        .eq('user_id', userId)
         .eq('is_active', true)
         .order('last_accessed', { ascending: false });
 
@@ -23,11 +71,22 @@ export const userRoomService = {
         return [];
       }
 
+      // Debug: Check if there are any rooms at all
+      console.log('=== Debug: Checking salas table ===');
+      const { data: allSalas, error: allSalasError } = await supabase
+        .from('salas')
+        .select('id, nome, created_by')
+        .limit(5);
+      
+      console.log('Sample salas data:', allSalas);
+      console.log('Sample salas error:', allSalasError);
+
       // Get room details for each room
       const roomIds = userRoomData.map(ur => ur.sala_id);
+      console.log('Room IDs to fetch:', roomIds);
       const { data: roomsData, error: roomsError } = await supabase
         .from('salas')
-        .select('id, nome, tipo, descricao, data_expiracao, capacidade')
+        .select('id, nome, tipo, descricao, data_expiracao, capacidade, created_by')
         .in('id', roomIds);
 
       if (roomsError) throw roomsError;
@@ -47,17 +106,21 @@ export const userRoomService = {
   },
 
   // Join a room
-  async joinRoom(salaId, role = 'member') {
+  async joinRoom(salaId, role = 'admin') {
     try {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-      if (!currentUser) {
+      // Get consistent user ID
+      const userId = userIdUtils.ensureConsistentUserId();
+      
+      if (!userId) {
         throw new Error('User not authenticated');
       }
+
+      console.log('Joining room with user ID:', userId);
 
       const { data, error } = await supabase
         .from('user_rooms')
         .upsert({
-          user_id: currentUser.id,
+          user_id: userId,
           sala_id: salaId,
           role: role,
           last_accessed: new Date().toISOString(),
@@ -77,7 +140,7 @@ export const userRoomService = {
               last_accessed: new Date().toISOString(),
               is_active: true
             })
-            .eq('user_id', currentUser.id)
+            .eq('user_id', userId)
             .eq('sala_id', salaId)
             .select()
             .single();

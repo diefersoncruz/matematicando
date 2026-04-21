@@ -168,7 +168,7 @@
             Jogar
           </button>
           <button 
-            v-if="userRoom.role === 'admin'" 
+            v-if="canConfigureRoom(userRoom.salas)" 
             @click.stop="editRoomConfiguration(userRoom.salas)" 
             class="btn btn-config"
           >
@@ -232,6 +232,7 @@ import RoomSelection from '@/components/RoomSelection.vue';
 import SalaFormModal from '@/components/SalaFormModal.vue';
 import RoomConfigurationModal from '@/components/RoomConfigurationModal.vue';
 import LoginModal from '@/components/LoginModal.vue';
+import { roomPermissionService } from '@/services/roomPermissionService.js';
 
 const router = useRouter();
 
@@ -271,8 +272,7 @@ const loadUserRooms = async () => {
     console.log('Calling userRoomService.getUserRooms()...');
     const rooms = await userRoomService.getUserRooms();
     console.log('User rooms loaded successfully:', rooms);
-    console.log('Number of rooms:', rooms.length);
-    
+    console.log('User rooms loaded successfully:', rooms);
     userRooms.value = rooms;
     
     // Try to get stats (this might be failing)
@@ -346,6 +346,7 @@ const leaveRoom = async (userRoom) => {
 
 const handleRoomJoined = async (room) => {
   try {
+    // Join room as admin (all users are admins)
     await userRoomService.joinRoom(room.id);
     await loadUserRooms(); // Refresh the list
     showJoinRoom.value = false;
@@ -372,6 +373,16 @@ const closeConfigModal = () => {
 const handleConfigurationSaved = (config) => {
   console.log('Configuration saved:', config);
   // Could show a success message or refresh data if needed
+};
+
+const canConfigureRoom = (room) => {
+  const currentUser = authService.getCurrentUser();
+  if (!currentUser || !room || !room.created_by) {
+    return false;
+  }
+  
+  // User can configure if they created the room
+  return room.created_by === currentUser.id;
 };
 
 const handleLoginSuccess = () => {
