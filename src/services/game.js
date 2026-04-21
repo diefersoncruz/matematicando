@@ -1,5 +1,22 @@
 import { getRandomInt } from "./utils.js";
-import { configuracoes } from "../data/config.js";
+import { configService } from "./configService.js";
+
+let configuracoes = {
+  limiteTempo: 60,
+  limiteFatorA: 10,
+  limiteNegativoFatorA: 0,
+  limiteFatorB: 10,
+  limiteNegativoFatorB: 0,
+  operacoesPermitidas: {
+    operacoesDeDivisao: true,
+    operacoesDeMultiplicacao: true,
+    operacoesDeAdicao: true,
+    operacoesDeSubtracao: true,
+  },
+  exibicao: {
+    exibirRespostaCerta: false,
+  },
+};
 
 const operacoes = {
   1: {
@@ -26,6 +43,17 @@ const operacoes = {
 
 let historicoOperacoes = [];
 let operadorMatematicoAtual;
+
+async function loadConfig(salaId = null) {
+  if (salaId) {
+    configuracoes = await configService.getRoomConfig(salaId);
+    // Update operations enabled status
+    operacoes[1].habilitado = configuracoes.operacoesPermitidas.operacoesDeDivisao;
+    operacoes[2].habilitado = configuracoes.operacoesPermitidas.operacoesDeMultiplicacao;
+    operacoes[3].habilitado = configuracoes.operacoesPermitidas.operacoesDeAdicao;
+    operacoes[4].habilitado = configuracoes.operacoesPermitidas.operacoesDeSubtracao;
+  }
+}
 
 function gerarOperacao(atualizarDados) {
   const operacoesHabilitadas = Object.keys(operacoes).filter(
@@ -125,4 +153,4 @@ function zerarPontuacao(atualizarDados) {
   atualizarDados("erros", 0);
 }
 
-export { gerarOperacao, validarResultado, zerarPontuacao };
+export { gerarOperacao, validarResultado, zerarPontuacao, loadConfig };

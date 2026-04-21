@@ -161,7 +161,104 @@ export const authService = {
     return supabase.auth.onAuthStateChange(callback);
   },
 
-  // Simple authentication (for demo purposes)
+  // Login user - apenas autentica usuários existentes
+  async loginUser(username, password) {
+    try {
+      // Simple hash function for demo (in production use proper hashing)
+      const hashPassword = (pwd) => btoa(pwd + 'salt');
+      
+      // Check if user exists in our database
+      const { data: existingUser, error: userError } = await supabase
+        .from('users')
+        .select('id, username, password_hash, created_at')
+        .eq('username', username)
+        .single();
+
+      if (userError && userError.code === 'PGRST116') {
+        // User doesn't exist
+        throw new Error('Usuário não encontrado. Por favor, cadastre-se primeiro.');
+      }
+
+      if (userError) {
+        throw userError;
+      }
+
+      // User exists, validate password
+      const hashedPassword = hashPassword(password);
+      
+      if (existingUser.password_hash !== hashedPassword) {
+        throw new Error('Senha incorreta');
+      }
+      
+      const user = {
+        id: existingUser.id,
+        username: existingUser.username,
+        email: `${username}@matematicando.local`
+      };
+
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      console.log('Login bem-sucedido:', user);
+      
+      return { user };
+    } catch (error) {
+      console.error('Erro no login:', error);
+      throw error;
+    }
+  },
+
+  // Register user - cria novos usuários
+  async registerUser(username, password) {
+    try {
+      // Simple hash function for demo (in production use proper hashing)
+      const hashPassword = (pwd) => btoa(pwd + 'salt');
+      
+      // First, check if user already exists
+      const { data: existingUser, error: userError } = await supabase
+        .from('users')
+        .select('id, username')
+        .eq('username', username)
+        .single();
+
+      if (existingUser) {
+        throw new Error('Este nome de usuário já está em uso. Escolha outro.');
+      }
+
+      // User doesn't exist, create new user
+      const hashedPassword = hashPassword(password);
+      
+      const { data: newUser, error: createError } = await supabase
+        .from('users')
+        .insert([{
+          username: username,
+          password_hash: hashedPassword,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Erro ao criar usuário:', createError);
+        throw createError;
+      }
+
+      console.log('Novo usuário criado:', newUser);
+      const user = {
+        id: newUser.id,
+        username: newUser.username,
+        email: `${username}@matematicando.local`
+      };
+
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      console.log('Cadastro bem-sucedido:', user);
+      
+      return { user };
+    } catch (error) {
+      console.error('Erro no cadastro:', error);
+      throw error;
+    }
+  },
+
+  // Simple authentication (for demo purposes) - mantido para compatibilidade
   async simpleAuth(username, password) {
     try {
       
@@ -191,10 +288,35 @@ export const authService = {
           email: `${username}@matematicando.local`
         };
       } else {
-        throw new Error('Usuário não encontrado');
+        // User doesn't exist, create new user
+        const hashedPassword = hashPassword(password);
+        
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert([{
+            username: username,
+            password_hash: hashedPassword,
+            created_at: new Date().toISOString()
+          }])
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Erro ao criar usuário:', createError);
+          throw createError;
+        }
+
+        console.log('Novo usuário criado:', newUser);
+        user = {
+          id: newUser.id,
+          username: newUser.username,
+          email: `${username}@matematicando.local`
+        };
       }
 
       localStorage.setItem('currentUser', JSON.stringify(user));
+      console.log('Usuário armazenado no localStorage:', user);
+      console.log('=== Fim da autenticação do usuário ===');
       
       return { user };
     } catch (error) {

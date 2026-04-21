@@ -139,27 +139,27 @@ const handleSubmit = async () => {
   error.value = null;
 
   try {
-    console.log('LoginModal: Starting login process...');
+    console.log('LoginModal: Starting authentication process...');
     console.log('LoginModal: Form data:', { username: formData.username });
     
     let result;
     
     if (isLogin.value) {
-      // Login
+      // Login - apenas autentica usuário existente
       console.log('LoginModal: Attempting login...');
-      result = await authService.simpleAuth(formData.username, formData.password);
+      result = await authService.loginUser(formData.username, formData.password);
     } else {
-      // Register (for now, just login after registration)
+      // Register - cria novo usuário
       console.log('LoginModal: Attempting registration...');
-      result = await authService.simpleAuth(formData.username, formData.password);
+      result = await authService.registerUser(formData.username, formData.password);
     }
 
-    console.log('LoginModal: Login successful:', result);
+    console.log('LoginModal: Authentication successful:', result);
     console.log('LoginModal: Emitting login-success event');
     emit('login-success', result.user);
     closeModal();
   } catch (err) {
-    console.error('LoginModal: Login error:', err);
+    console.error('LoginModal: Authentication error:', err);
     error.value = err.message || 'Ocorreu um erro. Tente novamente.';
   } finally {
     loading.value = false;
