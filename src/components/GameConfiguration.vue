@@ -16,7 +16,7 @@
           />
         </div>
         <div class="config-item">
-          <label for="limiteFatorA" class="config-label">Limite Fator A</label>
+          <label for="limiteFatorA" class="config-label">Valor Máximo (Positivo) - Fator A</label>
           <input 
             type="number" 
             id="limiteFatorA" 
@@ -26,9 +26,10 @@
             max="1000"
             @input="updateConfig"
           />
+          <small class="config-hint">Maior valor positivo permitido (ex: 10 para números de 0 a 10)</small>
         </div>
         <div class="config-item">
-          <label for="limiteFatorB" class="config-label">Limite Fator B</label>
+          <label for="limiteFatorB" class="config-label">Valor Máximo (Positivo) - Fator B</label>
           <input 
             type="number" 
             id="limiteFatorB" 
@@ -38,33 +39,36 @@
             max="1000"
             @input="updateConfig"
           />
+          <small class="config-hint">Maior valor positivo permitido (ex: 10 para números de 0 a 10)</small>
         </div>
       </div>
       
       <div class="config-row">
         <div class="config-item">
-          <label for="limiteNegativoA" class="config-label">Limite Negativo Fator A</label>
+          <label for="limiteNegativoA" class="config-label">Valor Mínimo (Negativo) - Fator A</label>
           <input 
             type="number" 
             id="limiteNegativoA" 
             v-model="localConfig.limiteNegativoFatorA"
             class="config-input"
-            min="0"
-            max="1000"
+            min="-1000"
+            max="0"
             @input="updateConfig"
           />
+          <small class="config-hint">Para permitir números negativos (ex: -10 para números de -10 a 0)</small>
         </div>
         <div class="config-item">
-          <label for="limiteNegativoB" class="config-label">Limite Negativo Fator B</label>
+          <label for="limiteNegativoB" class="config-label">Valor Mínimo (Negativo) - Fator B</label>
           <input 
             type="number" 
             id="limiteNegativoB" 
             v-model="localConfig.limiteNegativoFatorB"
             class="config-input"
-            min="0"
-            max="1000"
+            min="-1000"
+            max="0"
             @input="updateConfig"
           />
+          <small class="config-hint">Para permitir números negativos (ex: -10 para números de -10 a 0)</small>
         </div>
       </div>
 
@@ -250,6 +254,15 @@ onMounted(() => {
   width: 16px;
   height: 16px;
   accent-color: #667eea;
+}
+
+.config-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #666;
+  font-style: italic;
+  line-height: 1.3;
 }
 
 /* Responsive */

@@ -1,4 +1,4 @@
-import { gerarOperacao, zerarPontuacao, loadConfig, getConfig } from "./game.js";
+import { gerarOperacao, zerarPontuacao, limparHistorico, loadConfig, getConfig } from "./game.js";
 import { configService } from "./configService.js";
 
 let intervalo;
@@ -29,6 +29,7 @@ async function iniciarJogo(atualizarDados, salaId = null) {
   atualizarDados("jogoEmAndamento", true);
   atualizarDados("tempoFormatado", formatarTempo(tempoRestante));
 
+  limparHistorico();
   gerarOperacao(atualizarDados);
   zerarPontuacao(atualizarDados);
 

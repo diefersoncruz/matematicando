@@ -183,7 +183,8 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
-import { salasService } from '@/services/salasService.js';
+import { salasService } from '../services/salasService.js';
+import { configService } from '../services/configService.js';
 import { authService } from '@/services/authService.js';
 import { userRoomService } from '@/services/userRoomService.js';
 import GameConfiguration from '@/components/GameConfiguration.vue';
@@ -293,6 +294,12 @@ const validateForm = () => {
 };
 
 const submitForm = async () => {
+  // Prevent multiple submissions
+  if (submitting.value) {
+    console.log('Form already submitting, ignoring...');
+    return;
+  }
+
   // Check if user is authenticated
   if (!authService.isAuthenticated()) {
     alert('Você precisa estar logado para criar uma sala. Por favor, faça login primeiro.');
@@ -305,16 +312,20 @@ const submitForm = async () => {
   submitting.value = true;
   
   try {
+    console.log('=== SalaFormModal Debug ===');
+    console.log('Sala data:', sala.value);
+    console.log('Game config:', gameConfig.value);
     
-    // Combine sala data with game configuration
-    const salaData = {
-      ...sala.value,
-      ...gameConfig.value
-    };
-    
-    // Create the room
-    const createdSala = await salasService.createSala(salaData);
+    // Create the room (without game config)
+    const createdSala = await salasService.createSala(sala.value);
     console.log('Room created successfully:', createdSala);
+    
+    // Save game configuration separately
+    if (createdSala && createdSala.id) {
+      console.log('Saving game configuration for sala:', createdSala.id);
+      await configService.saveRoomConfig(createdSala.id, gameConfig.value);
+      console.log('Game configuration saved successfully');
+    }
     
     // Get current user
     const currentUser = authService.getCurrentUser();
@@ -398,7 +409,7 @@ const submitForm = async () => {
   align-items: center;
   justify-content: space-between;
   padding: 32px 32px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
   color: white;
   margin: -20px -20px 32px;
 }
@@ -472,7 +483,7 @@ const submitForm = async () => {
 
 .form-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -535,17 +546,17 @@ const submitForm = async () => {
 }
 
 .radio-option:hover {
-  border-color: #667eea;
+  border-color: #2563eb;
   background: #f9fafb;
 }
 
 .radio-option input:checked + .radio-custom + .radio-content {
-  color: #667eea;
+  color: #2563eb;
 }
 
 .radio-option input:checked + .radio-custom {
-  border-color: #667eea;
-  background: #667eea;
+  border-color: #2563eb;
+  background: #2563eb;
 }
 
 .radio-option input:checked + .radio-custom::after {
@@ -626,7 +637,7 @@ const submitForm = async () => {
 }
 
 .btn-primary {
-  background: #667eea;
+  background: #2563eb;
   color: white;
 }
 
@@ -710,7 +721,7 @@ const submitForm = async () => {
 
 .config-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -735,7 +746,7 @@ const submitForm = async () => {
 }
 
 .operation-checkbox:hover {
-  border-color: #667eea;
+  border-color: #2563eb;
   background: #f8fafc;
 }
 
@@ -743,7 +754,7 @@ const submitForm = async () => {
   margin: 0;
   width: 16px;
   height: 16px;
-  accent-color: #667eea;
+  accent-color: #2563eb;
 }
 
 @media (max-width: 768px) {

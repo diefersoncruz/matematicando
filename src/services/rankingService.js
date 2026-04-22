@@ -85,10 +85,11 @@ export const rankingService = {
       
       if (existingScore) {
         // Update existing score only if it's better
-        if (hits > existingScore.hits || 
+        const isNewScoreBetter = hits > existingScore.hits || 
             (hits === existingScore.hits && errors < existingScore.errors) ||
-            (hits === existingScore.hits && errors === existingScore.errors && totalTimeSeconds < existingScore.total_time_seconds)) {
-          
+            (hits === existingScore.hits && errors === existingScore.errors && totalTimeSeconds < existingScore.total_time_seconds);
+        
+        if (isNewScoreBetter) {
           const { data, error } = await supabase
             .from('game_scores')
             .update({

@@ -37,27 +37,41 @@ export const configService = {
         return config;
       }
 
+      // Define default configuration once to use in multiple places
+      const defaultConfig = {
+        limiteTempo: 60,
+        limiteFatorA: 10,
+        limiteNegativoFatorA: 0,
+        limiteFatorB: 10,
+        limiteNegativoFatorB: 0,
+        operacoesPermitidas: {
+          operacoesDeDivisao: true,
+          operacoesDeMultiplicacao: true,
+          operacoesDeAdicao: true,
+          operacoesDeSubtracao: true,
+        },
+        exibicao: {
+          exibirRespostaCerta: false,
+        },
+      };
+
+      // First verify if the room exists
+      console.log('Verificando se a sala existe:', salaId);
+      const { data: roomExists, error: roomCheckError } = await supabase
+        .from('salas')
+        .select('id')
+        .eq('id', salaId)
+        .single();
+
+      if (roomCheckError || !roomExists) {
+        console.error('Sala não encontrada, retornando configuração padrão:', roomCheckError);
+        return defaultConfig;
+      }
+
       // If no configuration exists, create default configuration for this room
       if (!tableError && (!tableData || tableData.length === 0)) {
         console.log('Nenhuma configuração encontrada, criando configuração padrão para a sala:', salaId);
         try {
-          const defaultConfig = {
-            limiteTempo: 60,
-            limiteFatorA: 10,
-            limiteNegativoFatorA: 0,
-            limiteFatorB: 10,
-            limiteNegativoFatorB: 0,
-            operacoesPermitidas: {
-              operacoesDeDivisao: true,
-              operacoesDeMultiplicacao: true,
-              operacoesDeAdicao: true,
-              operacoesDeSubtracao: true,
-            },
-            exibicao: {
-              exibirRespostaCerta: false,
-            },
-          };
-
           await this.saveRoomConfig(salaId, defaultConfig);
           console.log('Configuração padrão criada com sucesso');
           return defaultConfig;
@@ -124,6 +138,24 @@ export const configService = {
   // Save configuration for a specific room
   async saveRoomConfig(salaId, config) {
     try {
+      console.log('=== saveRoomConfig Debug ===');
+      console.log('Config received:', config);
+      
+      // Handle both direct flags and nested structure
+      const operacoesAdicao = config.operacoesPermitidas?.operacoesDeAdicao ?? config.operacoesDeAdicao ?? true;
+      const operacoesSubtracao = config.operacoesPermitidas?.operacoesDeSubtracao ?? config.operacoesDeSubtracao ?? true;
+      const operacoesMultiplicacao = config.operacoesPermitidas?.operacoesDeMultiplicacao ?? config.operacoesMultiplicacao ?? true;
+      const operacoesDivisao = config.operacoesPermitidas?.operacoesDeDivisao ?? config.operacoesDeDivisao ?? true;
+      const exibirRespostaCerta = config.exibicao?.exibirRespostaCerta ?? config.exibirRespostaCerta ?? false;
+      
+      console.log('Processed flags:', {
+        operacoesAdicao,
+        operacoesSubtracao, 
+        operacoesMultiplicacao,
+        operacoesDivisao,
+        exibirRespostaCerta
+      });
+      
       const { data, error } = await supabase
         .rpc('save_room_configuration', {
           p_sala_id: salaId,
@@ -132,18 +164,37 @@ export const configService = {
           p_limite_fator_b: config.limiteFatorB || 10,
           p_limite_negativo_fator_a: config.limiteNegativoFatorA || 0,
           p_limite_negativo_fator_b: config.limiteNegativoFatorB || 0,
-          p_operacoes_adicao: config.operacoesPermitidas?.operacoesDeAdicao || true,
-          p_operacoes_subtracao: config.operacoesPermitidas?.operacoesDeSubtracao || true,
-          p_operacoes_multiplicacao: config.operacoesPermitidas?.operacoesDeMultiplicacao || true,
-          p_operacoes_divisao: config.operacoesPermitidas?.operacoesDeDivisao || true,
-          p_exibir_resposta_certa: config.exibicao?.exibirRespostaCerta || false,
+          p_operacoes_adicao: operacoesAdicao,
+          p_operacoes_subtracao: operacoesSubtracao,
+          p_operacoes_multiplicacao: operacoesMultiplicacao,
+          p_operacoes_divisao: operacoesDivisao,
+          p_exibir_resposta_certa: exibirRespostaCerta,
         });
 
       if (error) throw error;
       return data;
     } catch (error) {
       console.error('Error saving room configuration:', error);
-      throw error;
+      // Define default config here as well for error cases
+      const fallbackConfig = {
+        limiteTempo: 60,
+        limiteFatorA: 10,
+        limiteNegativoFatorA: 0,
+        limiteFatorB: 10,
+        limiteNegativoFatorB: 0,
+        operacoesPermitidas: {
+          operacoesDeDivisao: true,
+          operacoesDeMultiplicacao: true,
+          operacoesDeAdicao: true,
+          operacoesDeSubtracao: true,
+        },
+        exibicao: {
+          exibirRespostaCerta: false,
+        },
+      };
+      
+      console.log('Retornando configuração padrão devido a erro:', fallbackConfig);
+      return fallbackConfig;
     }
   }
 };

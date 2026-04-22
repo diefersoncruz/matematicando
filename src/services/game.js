@@ -43,6 +43,7 @@ const operacoes = {
 
 let historicoOperacoes = [];
 let operadorMatematicoAtual;
+let operationSet = new Set(); // Global Set for O(1) lookup
 
 async function loadConfig(salaId = null) {
   console.log('loadConfig chamado com salaId:', salaId);
@@ -73,6 +74,8 @@ function gerarOperacao(atualizarDados) {
 
   let operadorValido = false;
   let fator1, fator2;
+  let tentativas = 0;
+  const maxTentativas = 50; // Limitar tentativas para evitar loops infinitos
 
   do {
     operadorMatematicoAtual = parseInt(
@@ -81,13 +84,33 @@ function gerarOperacao(atualizarDados) {
 
     [fator1, fator2] = gerarFatores(operadorMatematicoAtual);
     operadorValido = !operacaoRepetida(fator1, fator2, operadorMatematicoAtual);
+    tentativas++;
+    
+    // Se não encontrar após muitas tentativas, permite repetição
+    if (tentativas >= maxTentativas) {
+      console.log('Máximo de tentativas atingido, permitindo operação repetida');
+      operadorValido = true;
+    }
   } while (!operadorValido);
 
+  const operationKey = `${fator1},${fator2},${operadorMatematicoAtual}`;
+  
   historicoOperacoes.push({
     fator1,
     fator2,
     operador: operadorMatematicoAtual,
   });
+  
+  // Update Set for O(1) lookup
+  operationSet.add(operationKey);
+  
+  // Limit history size to prevent memory leak and performance degradation
+  if (historicoOperacoes.length > 100) {
+    const removed = historicoOperacoes.shift(); // Remove oldest operation
+    const removedKey = `${removed.fator1},${removed.fator2},${removed.operador}`;
+    operationSet.delete(removedKey);
+    console.log('Historico limitado a 100 operações, removendo mais antiga');
+  }
 
   atualizarDados("fator1", fator1);
   atualizarDados("fator2", fator2);
@@ -97,6 +120,11 @@ function gerarOperacao(atualizarDados) {
 
 function gerarFatores(operador) {
   let fator1, fator2;
+  
+  // Verificar se os limites permitem números negativos
+  const permiteNegativosA = configuracoes.limiteNegativoFatorA < 0;
+  const permiteNegativosB = configuracoes.limiteNegativoFatorB < 0;
+  
   do {
     fator1 = getRandomInt(
       configuracoes.limiteNegativoFatorA,
@@ -106,7 +134,7 @@ function gerarFatores(operador) {
       configuracoes.limiteNegativoFatorB,
       configuracoes.limiteFatorB
     );
-
+    
     if (operador === 1 && fator2 !== 0) {
       fator1 =
         fator2 *
@@ -123,18 +151,21 @@ function gerarFatores(operador) {
 }
 
 function operacaoRepetida(fator1, fator2, operador) {
-  return historicoOperacoes.some(
-    (op) =>
-      op.fator1 === fator1 && op.fator2 === fator2 && op.operador === operador
-  );
+  // Create a unique key for faster comparison
+  const operationKey = `${fator1},${fator2},${operador}`;
+  
+  // Use Set for O(1) lookup instead of Array.some() O(n)
+  return operationSet.has(operationKey);
 }
 
 function validarResultado(atualizarDados) {
-  const resultadoCorreto = operacoes[operadorMatematicoAtual].funcao(
-    parseFloat(atualizarDados("fator1")),
-    parseFloat(atualizarDados("fator2"))
-  );
-  if (resultadoCorreto === parseFloat(atualizarDados("respostaUsuario"))) {
+  const fator1 = parseFloat(atualizarDados("fator1"));
+  const fator2 = parseFloat(atualizarDados("fator2"));
+  const respostaUsuario = parseFloat(atualizarDados("respostaUsuario"));
+  
+  const resultadoCorreto = operacoes[operadorMatematicoAtual].funcao(fator1, fator2);
+  
+  if (resultadoCorreto === respostaUsuario) {
     adicionarAcerto(atualizarDados);
     gerarOperacao(atualizarDados);
   } else {
@@ -159,8 +190,14 @@ function zerarPontuacao(atualizarDados) {
   atualizarDados("erros", 0);
 }
 
+function limparHistorico() {
+  historicoOperacoes = [];
+  operationSet = new Set(); // Reset the Set for O(1) lookup
+  console.log('Histórico de operações limpo');
+}
+
 function getConfig() {
   return configuracoes;
 }
 
-export { gerarOperacao, validarResultado, zerarPontuacao, loadConfig, getConfig };
+export { gerarOperacao, validarResultado, zerarPontuacao, limparHistorico, loadConfig, getConfig, operacoes, operadorMatematicoAtual };

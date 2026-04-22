@@ -29,21 +29,49 @@ export const roomConfigurationService = {
   // Save room configuration
   async saveRoomConfiguration(salaId, configuration) {
     try {
+      console.log('=== roomConfigurationService.saveRoomConfiguration Debug ===');
+      console.log('Sala ID:', salaId);
+      console.log('Configuration received:', configuration);
+      
+      // Handle both direct flags and nested structure
+      const operacoesAdicao = configuration.operacoesPermitidas?.operacoesDeAdicao ?? configuration.operacoesAdicao ?? true;
+      const operacoesSubtracao = configuration.operacoesPermitidas?.operacoesDeSubtracao ?? configuration.operacoesSubtracao ?? true;
+      const operacoesMultiplicacao = configuration.operacoesPermitidas?.operacoesDeMultiplicacao ?? configuration.operacoesMultiplicacao ?? true;
+      const operacoesDivisao = configuration.operacoesPermitidas?.operacoesDeDivisao ?? configuration.operacoesDivisao ?? true;
+      const exibirRespostaCerta = configuration.exibicao?.exibirRespostaCerta ?? configuration.exibirRespostaCerta ?? false;
+      
+      const upsertData = {
+        sala_id: salaId,
+        limite_tempo: configuration.limiteTempo || 60,
+        limite_fator_a: configuration.limiteFatorA || 10,
+        limite_fator_b: configuration.limiteFatorB || 10,
+        limite_negativo_fator_a: configuration.limiteNegativoFatorA || 0,
+        limite_negativo_fator_b: configuration.limiteNegativoFatorB || 0,
+        operacoes_adicao: operacoesAdicao,
+        operacoes_subtracao: operacoesSubtracao,
+        operacoes_multiplicacao: operacoesMultiplicacao,
+        operacoes_divisao: operacoesDivisao,
+        exibir_resposta_certa: exibirRespostaCerta
+      };
+      
+      console.log('Data to upsert:', upsertData);
+      console.log('Processed flag values:', {
+        operacoesAdicao,
+        operacoesSubtracao,
+        operacoesMultiplicacao,
+        operacoesDivisao,
+        exibirRespostaCerta
+      });
+      console.log('Original configuration structure:', {
+        hasOperacoesPermitidas: !!configuration.operacoesPermitidas,
+        hasExibicao: !!configuration.exibicao,
+        operacoesPermitidas: configuration.operacoesPermitidas,
+        exibicao: configuration.exibicao
+      });
+      
       const { data, error } = await supabase
         .from('room_configurations')
-        .upsert({
-          sala_id: salaId,
-          limite_tempo: configuration.limiteTempo || 60,
-          limite_fator_a: configuration.limiteFatorA || 10,
-          limite_fator_b: configuration.limiteFatorB || 10,
-          limite_negativo_fator_a: configuration.limiteNegativoFatorA || 0,
-          limite_negativo_fator_b: configuration.limiteNegativoFatorB || 0,
-          operacoes_adicao: configuration.operacoesAdicao !== false,
-          operacoes_subtracao: configuration.operacoesSubtracao !== false,
-          operacoes_multiplicacao: configuration.operacoesMultiplicacao !== false,
-          operacoes_divisao: configuration.operacoesDivisao !== false,
-          exibir_resposta_certa: configuration.exibirRespostaCerta || false
-        }, {
+        .upsert(upsertData, {
           onConflict: 'sala_id'
         })
         .select()
@@ -121,20 +149,20 @@ export const roomConfigurationService = {
       errors.push('O tempo limite deve estar entre 10 e 300 segundos');
     }
 
-    if (configuration.limiteFatorA && (configuration.limiteFatorA < 1 || configuration.limiteFatorA > 1000)) {
-      errors.push('O limite do fator A deve estar entre 1 e 1000');
+    if (configuration.limiteFatorA !== undefined && (configuration.limiteFatorA < 1 || configuration.limiteFatorA > 1000)) {
+      errors.push('O limite do fator A deve ser um número positivo entre 1 e 1000');
     }
 
-    if (configuration.limiteFatorB && (configuration.limiteFatorB < 1 || configuration.limiteFatorB > 1000)) {
-      errors.push('O limite do fator B deve estar entre 1 e 1000');
+    if (configuration.limiteFatorB !== undefined && (configuration.limiteFatorB < 1 || configuration.limiteFatorB > 1000)) {
+      errors.push('O limite do fator B deve ser um número positivo entre 1 e 1000');
     }
 
-    if (configuration.limiteNegativoFatorA && (configuration.limiteNegativoFatorA < 0 || configuration.limiteNegativoFatorA > 1000)) {
-      errors.push('O limite negativo do fator A deve estar entre 0 e 1000');
+    if (configuration.limiteNegativoFatorA !== undefined && (configuration.limiteNegativoFatorA < -1000 || configuration.limiteNegativoFatorA > 0)) {
+      errors.push('O limite negativo do fator A deve ser um número negativo ou zero entre -1000 e 0');
     }
 
-    if (configuration.limiteNegativoFatorB && (configuration.limiteNegativoFatorB < 0 || configuration.limiteNegativoFatorB > 1000)) {
-      errors.push('O limite negativo do fator B deve estar entre 0 e 1000');
+    if (configuration.limiteNegativoFatorB !== undefined && (configuration.limiteNegativoFatorB < -1000 || configuration.limiteNegativoFatorB > 0)) {
+      errors.push('O limite negativo do fator B deve ser um número negativo ou zero entre -1000 e 0');
     }
 
     // Check if at least one operation is enabled

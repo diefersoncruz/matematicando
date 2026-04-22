@@ -32,7 +32,7 @@
                 />
               </div>
               <div class="config-item">
-                <label for="limiteFatorA" class="config-label">Limite Fator A</label>
+                <label for="limiteFatorA" class="config-label">Valor Máximo (Positivo) - Fator A</label>
                 <input 
                   type="number" 
                   id="limiteFatorA" 
@@ -42,9 +42,10 @@
                   max="1000"
                   required
                 />
+                <small class="config-hint">Maior valor positivo permitido (ex: 10 para números de 0 a 10)</small>
               </div>
               <div class="config-item">
-                <label for="limiteFatorB" class="config-label">Limite Fator B</label>
+                <label for="limiteFatorB" class="config-label">Valor Máximo (Positivo) - Fator B</label>
                 <input 
                   type="number" 
                   id="limiteFatorB" 
@@ -54,31 +55,35 @@
                   max="1000"
                   required
                 />
+                <small class="config-hint">Maior valor positivo permitido (ex: 10 para números de 0 a 10)</small>
               </div>
             </div>
             
             <div class="config-row">
               <div class="config-item">
-                <label for="limiteNegativoA" class="config-label">Limite Negativo Fator A</label>
+                <label for="limiteNegativoA" class="config-label">Valor Mínimo (Negativo) - Fator A</label>
                 <input 
                   type="number" 
                   id="limiteNegativoA" 
                   v-model="configuracao.limiteNegativoFatorA"
                   class="config-input"
-                  min="0"
-                  max="1000"
+                  min="-1000"
+                  max="0"
+                  @input="updateConfiguration"
                 />
+                <small class="config-hint">Para permitir números negativos (ex: -10 para números de -10 a 0)</small>
               </div>
               <div class="config-item">
-                <label for="limiteNegativoB" class="config-label">Limite Negativo Fator B</label>
+                <label for="limiteNegativoB" class="config-label">Valor Mínimo (Negativo) - Fator B</label>
                 <input 
                   type="number" 
                   id="limiteNegativoB" 
                   v-model="configuracao.limiteNegativoFatorB"
                   class="config-input"
-                  min="0"
-                  max="1000"
+                  min="-1000"
+                  max="0"
                 />
+                <small class="config-hint">Para permitir números negativos (ex: -10 para números de -10 a 0)</small>
               </div>
             </div>
 
@@ -211,12 +216,19 @@ const loadConfiguration = async () => {
 const saveConfiguration = async () => {
   if (!props.room) return;
   
+  // Prevent multiple submissions
+  if (loading.value) {
+    console.log('Configuration already saving, ignoring...');
+    return;
+  }
+  
   loading.value = true;
   try {
     // Validate configuration
     const errors = roomConfigurationService.validateConfiguration(configuracao.value);
     if (errors.length > 0) {
       alert('Erros de validação:\n' + errors.join('\n'));
+      loading.value = false;
       return;
     }
     
@@ -269,7 +281,7 @@ watch(() => props.showModal, (show) => {
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
   max-width: 700px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 95vh;
   overflow-y: auto;
   position: relative;
 }
@@ -296,6 +308,7 @@ watch(() => props.showModal, (show) => {
 /* Modal Content */
 .config-modal-content {
   padding: 20px;
+  padding-bottom: 30px;
 }
 
 .modal-header {
@@ -357,10 +370,18 @@ watch(() => props.showModal, (show) => {
 
 .config-label {
   display: block;
+  margin-bottom: 8px;
   font-weight: 500;
   color: #374151;
-  font-size: 14px;
-  margin-bottom: 6px;
+}
+
+.config-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #666;
+  font-style: italic;
+  line-height: 1.3;
 }
 
 .config-input {

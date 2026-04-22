@@ -69,6 +69,24 @@
             />
           </div>
 
+          <div class="form-group lgpd-consent" v-if="!isLogin">
+            <div class="consent-checkbox">
+              <input
+                id="lgpd-consent"
+                v-model="formData.lgpdConsent"
+                type="checkbox"
+                required
+                class="checkbox-input"
+              />
+              <label for="lgpd-consent" class="consent-label">
+                <span class="consent-title">Concordo com o uso de meus dados</span>
+                <span class="consent-text">
+                 Concordo em usar meu e-mail para criar minha conta, salvar meu progresso no jogo e permitir a recuperação de senha.
+                </span>
+              </label>
+            </div>
+          </div>
+
           <div class="error-message" v-if="error">
             {{ error }}
           </div>
@@ -112,7 +130,8 @@ const formData = reactive({
   name: '',
   email: '',
   password: '',
-  confirmPassword: ''
+  confirmPassword: '',
+  lgpdConsent: false
 });
 
 const emailError = ref('');
@@ -151,6 +170,7 @@ const resetForm = () => {
   formData.email = '';
   formData.password = '';
   formData.confirmPassword = '';
+  formData.lgpdConsent = false;
   error.value = null;
   loading.value = false;
 };
@@ -192,38 +212,40 @@ const validateForm = () => {
       error.value = 'As senhas não coincidem';
       return false;
     }
+
+    // Validate LGPD consent
+    if (!formData.lgpdConsent) {
+      error.value = 'É necessário concordar com o uso de seus dados para se cadastrar';
+      return false;
+    }
   }
 
   return true;
 };
 
 const handleSubmit = async () => {
+  // Prevent multiple submissions
+  if (loading.value) {
+    console.log('Login already processing, ignoring...');
+    return;
+  }
+
   if (!validateForm()) return;
 
   loading.value = true;
   error.value = null;
 
   try {
-    console.log('LoginModal: Starting authentication process...');
-    console.log('LoginModal: Form data:', { 
-      name: formData.name,
-      email: formData.email
-    });
     
     let result;
     
     if (isLogin.value) {
       // Login - apenas autentica usuário existente
-      console.log('LoginModal: Attempting login...');
       result = await authService.loginUser(formData.email, formData.password);
     } else {
       // Register - cria novo usuário
-      console.log('LoginModal: Attempting registration...');
       result = await authService.registerUser(formData.name, formData.email, formData.password);
     }
-
-    console.log('LoginModal: Authentication successful:', result);
-    console.log('LoginModal: Emitting login-success event');
     emit('login-success', result.user);
     closeModal();
   } catch (err) {
@@ -319,7 +341,7 @@ const handleSubmit = async () => {
 
 .form-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -377,7 +399,7 @@ const handleSubmit = async () => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
   color: white;
 }
 
@@ -404,7 +426,7 @@ const handleSubmit = async () => {
 .link-btn {
   background: none;
   border: none;
-  color: #667eea;
+  color: #2563eb;
   cursor: pointer;
   font-weight: 500;
   text-decoration: underline;
@@ -414,6 +436,55 @@ const handleSubmit = async () => {
 
 .link-btn:hover {
   color: #5a67d8;
+}
+
+/* LGPD Consent Styles */
+.lgpd-consent {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.consent-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.checkbox-input {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.consent-label {
+  flex: 1;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.consent-title {
+  display: block;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.consent-text {
+  display: block;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.consent-text br {
+  display: block;
+  margin: 2px 0;
 }
 
 /* Responsive Design */
