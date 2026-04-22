@@ -20,7 +20,7 @@
     
     <LoginModal 
       :showModal="showLoginModal" 
-      @close="() => { console.log('DEBUG: Evento close recebido no App'); showLoginModal = false; }"
+      @close="showLoginModal = false"
       @login-success="handleLoginSuccess"
     />
   </div>
