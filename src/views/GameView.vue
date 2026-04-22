@@ -8,39 +8,7 @@
       />
     </div>
     <div class="div-direita">
-      <!-- No Room Selected State -->
-      <div class="no-room-state" v-if="!selectedRoom">
-        <div class="no-room-content">
-          <div class="no-room-icon">
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-              <polyline points="17 21 17 13 7 13 7 21"/>
-              <polyline points="7 3 7 8 15 8"/>
-            </svg>
-          </div>
-          <h2>Selecione uma Sala para Jogar</h2>
-          <p>Para começar a jogar, você precisa selecionar uma sala de matemática.</p>
-          <p class="sub-text">Escolha uma sala existente ou crie uma nova sala para iniciar sua sessão de jogo.</p>
-          <div class="no-room-actions">
-            <button @click="showRoomSelection = true" class="btn btn-primary btn-large">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-                <polyline points="17 21 17 13 7 13 7 21"/>
-                <polyline points="7 3 7 8 15 8"/>
-              </svg>
-              Selecionar Sala
-            </button>
-            <button @click="goToCreateRoom" class="btn btn-secondary btn-large">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Criar Nova Sala
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="opcoes">
+            <div class="opcoes">
         <div id="divAcertos" class="score-box score-box--green">
           <label for="inputAcertos" class="score-label">Acertos:</label>
           <span id="inputAcertos" class="score-value">{{ acertos }}</span>
@@ -88,10 +56,9 @@
         <button
           id="btnIniciarPararJogo"
           class="btn btn-iniciar"
-          @click="iniciarOuPararJogo"
-          :disabled="!selectedRoom"
+          @click="toggleJogo"
         >
-          {{ jogoEmAndamento ? "Parar Jogo" : selectedRoom ? "Iniciar Jogo" : "Selecione uma Sala" }}
+          {{ jogoEmAndamento ? "Parar Jogo" : selectedRoom ? "Iniciar Jogo" : "Iniciar Jogo" }}
         </button>
         <button
           id="btn-responder"
@@ -149,16 +116,43 @@ const tempoFormatado = computed(() => {
 });
 
 const atualizarDados = (campo, valor = null) => {
+  console.log('atualizarDados called:', campo, '=', valor);
+  
   if (valor !== null) {
-    if (campo === "acertos") acertos.value = valor;
-    if (campo === "erros") erros.value = valor;
-    if (campo === "fator1") fator1.value = valor;
-    if (campo === "fator2") fator2.value = valor;
-    if (campo === "operador") operador.value = valor;
-    if (campo === "respostaUsuario") respostaUsuario.value = valor;
-    if (campo === "jogoEmAndamento") jogoEmAndamento.value = valor;
-    if (campo === "tempoSegundos") tempoSegundos.value = valor;
+    if (campo === "acertos") {
+      acertos.value = valor;
+      console.log('acertos updated to:', valor);
+    }
+    if (campo === "erros") {
+      erros.value = valor;
+      console.log('erros updated to:', valor);
+    }
+    if (campo === "fator1") {
+      fator1.value = valor;
+      console.log('fator1 updated to:', valor);
+    }
+    if (campo === "fator2") {
+      fator2.value = valor;
+      console.log('fator2 updated to:', valor);
+    }
+    if (campo === "operador") {
+      operador.value = valor;
+      console.log('operador updated to:', valor);
+    }
+    if (campo === "respostaUsuario") {
+      respostaUsuario.value = valor;
+      console.log('respostaUsuario updated to:', valor);
+    }
+    if (campo === "jogoEmAndamento") {
+      jogoEmAndamento.value = valor;
+      console.log('jogoEmAndamento updated to:', valor);
+    }
+    if (campo === "tempoSegundos") {
+      tempoSegundos.value = valor;
+      console.log('tempoSegundos updated to:', valor);
+    }
   }
+  
   if (campo === "acertos") return acertos.value;
   if (campo === "erros") return erros.value;
   if (campo === "fator1") return fator1.value;
@@ -176,8 +170,13 @@ const handleDocumentKeydown = (event) => {
   }
 };
 
-const iniciarOuPararJogo = () => {
+const toggleJogo = () => {
+  console.log('toggleJogo called - jogoEmAndamento:', jogoEmAndamento.value);
+  console.log('User authenticated:', authService.isAuthenticated());
+  console.log('Selected room:', selectedRoom.value);
+  
   if (jogoEmAndamento.value) {
+    console.log('Stopping game...');
     pararJogo(true, atualizarDados);
     clearInterval(intervaloCronometro.value);
     intervaloCronometro.value = null;
@@ -185,11 +184,23 @@ const iniciarOuPararJogo = () => {
     // Save score when game ends
     saveGameScore();
   } else {
-    if (!selectedRoom.value) {
-      showRoomSelection.value = true;
-      return;
+    console.log('Starting game...');
+    // Check if user is authenticated
+    if (authService.isAuthenticated()) {
+      // Authenticated users can play with or without room
+      if (!selectedRoom.value) {
+        console.log('No room selected for authenticated user, showing room selection');
+        showRoomSelection.value = true;
+        return;
+      }
+      console.log('Authenticated user starting game with room:', selectedRoom.value.id);
+      iniciarJogo(atualizarDados, selectedRoom.value.id);
+    } else {
+      // Anonymous users play without room (default settings)
+      console.log('Anonymous user starting game with default settings');
+      iniciarJogo(atualizarDados, null);
     }
-    iniciarJogo(atualizarDados, selectedRoom.value.id);
+    
     tempoSegundos.value = 0;
     intervaloCronometro.value = setInterval(() => {
       tempoSegundos.value++;
@@ -247,6 +258,10 @@ const goToCreateRoom = () => {
   router.push('/salas/criar');
 };
 
+const goToLogin = () => {
+  router.push('/login');
+};
+
 const rankingRef = ref(null);
 
 const saveGameScore = async () => {
@@ -296,8 +311,8 @@ onMounted(() => {
     }
   }
   
-  // Show room selection if no room is available (with small delay for data loading)
-  if (!selectedRoom.value) {
+  // Show room selection only for authenticated users if no room is available
+  if (!selectedRoom.value && authService.isAuthenticated()) {
     setTimeout(() => {
       showRoomSelection.value = true;
     }, 100);
@@ -314,66 +329,6 @@ onBeforeUnmount(() => {
 
 <style scoped>
 
-/* No Room State */
-.no-room-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 60vh;
-}
-
-.no-room-content {
-  text-align: center;
-  background: white;
-  padding: 48px;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-  max-width: 600px;
-}
-
-.no-room-icon {
-  color: #d1d5db;
-  margin-bottom: 32px;
-}
-
-.no-room-content h2 {
-  margin: 0 0 16px 0;
-  font-size: 28px;
-  color: #1f2937;
-  font-weight: 600;
-}
-
-.no-room-content p {
-  margin: 0 0 12px 0;
-  color: #6b7280;
-  line-height: 1.6;
-  font-size: 16px;
-}
-
-.no-room-content .sub-text {
-  margin: 0 0 32px 0;
-  color: #9ca3af;
-  font-size: 14px;
-}
-
-.no-room-actions {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-/* Update button disabled state */
-.btn-iniciar:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-iniciar:disabled:hover {
-  transform: none;
-  box-shadow: none;
-}
 
 /* Responsive adjustments */
 @media (max-width: 768px) {

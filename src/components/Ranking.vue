@@ -30,15 +30,48 @@
     <!-- No Room State -->
     <div class="no-room-state" v-else>
       <div class="no-room-content">
-        <div class="no-room-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-            <polyline points="17 21 17 13 7 13 7 21"/>
-            <polyline points="7 3 7 8 15 8"/>
-          </svg>
+        <!-- Anonymous User -->
+        <div v-if="!authService.isAuthenticated()">
+          <div class="no-room-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <h3>Bem-vindo, Jogador Anônimo!</h3>
+          <p>Você pode jogar gratuitamente no modo padrão.</p>
+          <p class="sub-text">Para acessar salas personalizadas e salvar seu progresso, <button @click="openLoginModal" class="login-link">crie uma conta</button>.</p>
         </div>
-        <h3>Selecione uma Sala</h3>
-        <p>Para ver o ranking, selecione uma sala primeiro</p>
+        
+        <!-- Authenticated User -->
+        <div v-else>
+          <div class="no-room-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+          </div>
+          <h3>Olá, {{ authService.getCurrentUsername() }}!</h3>
+          <p>Selecione uma sala para ver o ranking e jogar com configurações personalizadas.</p>
+          <div class="room-actions">
+            <button @click="$emit('change-room')" class="btn btn-small btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              Selecionar Sala
+            </button>
+            <a href="/salas/criar" class="btn btn-small btn-secondary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Criar Sala
+            </a>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -135,12 +168,21 @@
       </button>
     </div>
   </div>
+
+<!-- Login Modal -->
+<LoginModal
+  :showModal="showLoginModal"
+  @login-success="handleLoginSuccess"
+  @cancelled="showLoginModal = false"
+  @close="showLoginModal = false"
+/>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import { rankingService } from "@/services/rankingService.js";
 import { authService } from "@/services/authService.js";
+import LoginModal from "@/components/LoginModal.vue";
 
 // Props
 const props = defineProps({
@@ -159,6 +201,7 @@ const sortBy = ref('hits');
 const currentUser = ref(null);
 const loading = ref(false);
 const error = ref(null);
+const showLoginModal = ref(false);
 
 // Computed properties
 const sortedRanking = computed(() => {
@@ -196,6 +239,16 @@ const getPositionClass = (position) => {
 
 const changeRoom = () => {
   emit('change-room');
+};
+
+const openLoginModal = () => {
+  showLoginModal.value = true;
+};
+
+const handleLoginSuccess = () => {
+  showLoginModal.value = false;
+  // Refresh ranking data after login
+  loadRankingData();
 };
 
 const generateMockData = () => {
@@ -632,6 +685,72 @@ watch(() => props.currentRoom, () => {
   margin: 0 0 4px 0;
   font-weight: 500;
   color: #1f2937;
+}
+
+/* Login link */
+.login-link {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
+
+/* Room actions */
+.room-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.btn-small {
+  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-small.btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-small.btn-primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.btn-small.btn-secondary {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-small.btn-secondary:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+.btn-small svg {
+  flex-shrink: 0;
+}
+
+/* No room content adjustments */
+.no-room-content .sub-text {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.4;
 }
 
 .empty-subtext {

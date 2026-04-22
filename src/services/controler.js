@@ -15,25 +15,24 @@ function formatarTempo(segundos) {
 
 async function iniciarJogo(atualizarDados, salaId = null) {
   console.log('iniciarJogo chamado com salaId:', salaId);
-  if (confirm("Pronto para começar?")) {
-    // Load configuration from Supabase if salaId is provided
-    if (salaId) {
-      console.log('Carregando configurações da sala:', salaId);
-      await loadConfig(salaId);
-    }
-    
-    const configuracoes = getConfig();
-    console.log('Configurações obtidas após loadConfig:', configuracoes);
-    tempoRestante = configuracoes.limiteTempo;
-    console.log('Tempo limite configurado:', tempoRestante);
-    atualizarDados("jogoEmAndamento", true);
-    atualizarDados("tempoFormatado", formatarTempo(tempoRestante));
-
-    gerarOperacao(atualizarDados);
-    zerarPontuacao(atualizarDados);
-
-    iniciarCronometro(atualizarDados);
+  
+  // Load configuration from Supabase if salaId is provided
+  if (salaId) {
+    console.log('Carregando configurações da sala:', salaId);
+    await loadConfig(salaId);
   }
+  
+  const configuracoes = getConfig();
+  console.log('Configurações obtidas após loadConfig:', configuracoes);
+  tempoRestante = configuracoes.limiteTempo;
+  console.log('Tempo limite configurado:', tempoRestante);
+  atualizarDados("jogoEmAndamento", true);
+  atualizarDados("tempoFormatado", formatarTempo(tempoRestante));
+
+  gerarOperacao(atualizarDados);
+  zerarPontuacao(atualizarDados);
+
+  iniciarCronometro(atualizarDados);
 }
 
 function pararJogo(confirmarAntesParar = false, atualizarDados) {
