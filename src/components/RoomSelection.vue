@@ -169,7 +169,8 @@
 </template>
 
 <script>
-import { salasService } from '@/services/salasService.js';
+import { salasService } from '../services/salasService.js';
+import { userRoomService } from '../services/userRoomService.js';
 
 export default {
   name: 'RoomSelection',
@@ -224,21 +225,20 @@ export default {
       this.error = null;
       
       try {
-        console.log('Fetching rooms...');
-        const rooms = await salasService.getAllSalas();
-        console.log('Rooms fetched:', rooms);
+        console.log('Fetching user rooms...');
+        const userRooms = await userRoomService.getUserRooms();
+        console.log('User rooms fetched:', userRooms);
         
-        // Temporarily disable filtering to test
-        this.rooms = rooms; // .filter(room => this.isRoomAvailable(room));
-        console.log('All rooms (no filtering):', this.rooms);
+        // Extract room data from user rooms (userRooms contains the association + room data)
+        this.rooms = userRooms.map(userRoom => userRoom.salas).filter(room => room !== null);
         console.log('Available rooms:', this.rooms);
         
         if (this.rooms.length === 0) {
-          console.log('No available rooms found');
+          console.log('No user rooms found');
         }
       } catch (error) {
-        console.error('Error fetching rooms:', error);
-        this.error = error.message || 'Não foi possível carregar as salas';
+        console.error('Error fetching user rooms:', error);
+        this.error = error.message || 'Não foi possível carregar suas salas';
       } finally {
         this.loading = false;
       }

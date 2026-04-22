@@ -183,7 +183,8 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
-import { salasService } from '@/services/salasService.js';
+import { salasService } from '../services/salasService.js';
+import { configService } from '../services/configService.js';
 import { authService } from '@/services/authService.js';
 import { userRoomService } from '@/services/userRoomService.js';
 import GameConfiguration from '@/components/GameConfiguration.vue';
@@ -293,6 +294,12 @@ const validateForm = () => {
 };
 
 const submitForm = async () => {
+  // Prevent multiple submissions
+  if (submitting.value) {
+    console.log('Form already submitting, ignoring...');
+    return;
+  }
+
   // Check if user is authenticated
   if (!authService.isAuthenticated()) {
     alert('Você precisa estar logado para criar uma sala. Por favor, faça login primeiro.');
@@ -305,16 +312,20 @@ const submitForm = async () => {
   submitting.value = true;
   
   try {
+    console.log('=== SalaFormModal Debug ===');
+    console.log('Sala data:', sala.value);
+    console.log('Game config:', gameConfig.value);
     
-    // Combine sala data with game configuration
-    const salaData = {
-      ...sala.value,
-      ...gameConfig.value
-    };
-    
-    // Create the room
-    const createdSala = await salasService.createSala(salaData);
+    // Create the room (without game config)
+    const createdSala = await salasService.createSala(sala.value);
     console.log('Room created successfully:', createdSala);
+    
+    // Save game configuration separately
+    if (createdSala && createdSala.id) {
+      console.log('Saving game configuration for sala:', createdSala.id);
+      await configService.saveRoomConfig(createdSala.id, gameConfig.value);
+      console.log('Game configuration saved successfully');
+    }
     
     // Get current user
     const currentUser = authService.getCurrentUser();

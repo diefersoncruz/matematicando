@@ -140,7 +140,7 @@
 import { ref, onMounted, onBeforeUnmount, computed, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import { iniciarJogo, pararJogo } from "../services/controler.js";
-import { gerarOperacao, validarResultado, operacoes, operadorMatematicoAtual } from "../services/game.js";
+import { gerarOperacao, validarResultado, operacoes, operadorMatematicoAtual, getConfig } from "../services/game.js";
 import { rankingService } from "../services/rankingService.js";
 import { authService } from "@/services/authService.js";
 import Ranking from "@/components/Ranking.vue";
@@ -191,13 +191,23 @@ const atualizarDados = (campo, valor) => {
     case "operador":
       operador.value = valor;
       break;
+    case "respostaUsuario":
+      respostaUsuario.value = valor;
+      // Auto-focus when field is cleared
+      if (valor === "") {
+        setTimeout(() => {
+          inputResultado.value?.focus();
+        }, 0);
+      }
+      break;
     case "jogoEmAndamento":
       jogoEmAndamento.value = valor;
       if (valor) {
         respostaUsuario.value = "";
-        nextTick(() => {
+        // Focus without nextTick for immediate response
+        setTimeout(() => {
           inputResultado.value?.focus();
-        });
+        }, 0);
       }
       break;
     // tempoFormatado is computed, not writable - remove this case
@@ -215,9 +225,19 @@ const zerarPontuacao = (atualizarDados) => {
   atualizarDados("erros", 0);
 };
 
+// Add a flag to prevent multiple rapid executions
+let isProcessingAnswer = false;
+
 const handleDocumentKeydown = (event) => {
   if (event.key === "Enter" && event.target === document.body) {
-    verificarResposta();
+    if (!isProcessingAnswer) {
+      isProcessingAnswer = true;
+      verificarResposta();
+      // Reset the flag after a short delay to prevent rapid-fire submissions
+      setTimeout(() => {
+        isProcessingAnswer = false;
+      }, 100);
+    }
     event.preventDefault();
   }
 };
@@ -246,6 +266,19 @@ const toggleJogo = () => {
     tempoSegundos.value = 0;
     intervaloCronometro.value = setInterval(() => {
       tempoSegundos.value++;
+      
+      // Verificar se atingiu o tempo limite
+      const configuracoes = getConfig();
+      if (configuracoes && tempoSegundos.value >= configuracoes.limiteTempo) {
+        console.log('Tempo limite atingido, parando jogo automaticamente');
+        pararJogo(false, atualizarDados);
+        clearInterval(intervaloCronometro.value);
+        intervaloCronometro.value = null;
+        statusMessage.value = `TEMPO ESGOTADO! Você fez ${acertos.value} acertos e ${erros.value} erros`;
+        statusType.value = "warning";
+        // Salvar score quando tempo limite é atingido
+        saveGameScore();
+      }
     }, 1000);
     statusMessage.value = "Jogo iniciado!";
     statusType.value = "success";
@@ -270,6 +303,19 @@ const handleRoomSelected = (room) => {
     tempoSegundos.value = 0;
     intervaloCronometro.value = setInterval(() => {
       tempoSegundos.value++;
+      
+      // Verificar se atingiu o tempo limite
+      const configuracoes = getConfig();
+      if (configuracoes && tempoSegundos.value >= configuracoes.limiteTempo) {
+        console.log('Tempo limite atingido, parando jogo automaticamente');
+        pararJogo(false, atualizarDados);
+        clearInterval(intervaloCronometro.value);
+        intervaloCronometro.value = null;
+        statusMessage.value = `TEMPO ESGOTADO! Você fez ${acertos.value} acertos e ${erros.value} erros`;
+        statusType.value = "warning";
+        // Salvar score quando tempo limite é atingido
+        saveGameScore();
+      }
     }, 1000);
   });
 };
@@ -316,7 +362,12 @@ const saveGameScore = async () => {
   const playerName = authService.getCurrentName() || authService.getCurrentUsername();
   
   try {
-    await rankingService.savePlayerScore(
+    console.log('=== saveGameScore Debug ===');
+    console.log('Sala ID:', selectedRoom.value.id);
+    console.log('Player Name:', playerName);
+    console.log('Score:', { acertos: acertos.value, erros: erros.value, tempo: tempoSegundos.value });
+    
+    const result = await rankingService.savePlayerScore(
       selectedRoom.value.id,
       playerName,
       acertos.value,
@@ -324,13 +375,20 @@ const saveGameScore = async () => {
       tempoSegundos.value
     );
     
+    console.log('Score salvo no banco:', result);
+    
     // Trigger ranking refresh in the Ranking component
     if (rankingRef.value) {
+      console.log('Disparando refresh do ranking...');
       setTimeout(() => {
         rankingRef.value.refreshRanking();
+        console.log('Refresh do ranking disparado');
       }, 500); // Small delay to ensure score is saved
+    } else {
+      console.log('rankingRef.value é null/undefined');
     }
   } catch (error) {
+    console.error('Erro ao salvar score:', error);
     // Don't show error to user to avoid interrupting game flow
   }
 };

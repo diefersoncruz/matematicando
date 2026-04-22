@@ -171,7 +171,8 @@
 </template>
 
 <script>
-import { salasService } from '@/services/salasService.js';
+import { salasService } from '../services/salasService.js';
+import { configService } from '../services/configService.js';
 import { authService } from '@/services/authService.js';
 import GameConfiguration from '@/components/GameConfiguration.vue';
 
@@ -241,6 +242,12 @@ export default {
 
   methods: {
     async submitForm() {
+      // Prevent multiple submissions
+      if (this.submitting) {
+        console.log('Form already submitting, ignoring...');
+        return;
+      }
+
       // Check if user is authenticated
       if (!authService.isAuthenticated()) {
         alert('Você precisa estar logado para criar uma sala. Por favor, faça login primeiro.');
@@ -277,14 +284,20 @@ export default {
       }
 
       try {
-        // Combine sala data with game configuration
-        const salaData = {
-          ...this.sala,
-          ...this.gameConfig
-        };
+        console.log('=== SalaForm Debug ===');
+        console.log('Sala data:', this.sala);
+        console.log('Game config:', this.gameConfig);
         
-        // Create sala in Supabase
-        const novaSala = await salasService.createSala(salaData);
+        // Create sala in Supabase (without game config)
+        const novaSala = await salasService.createSala(this.sala);
+        console.log('Sala created:', novaSala);
+        
+        // Save game configuration separately
+        if (novaSala && novaSala.id) {
+          console.log('Saving game configuration for sala:', novaSala.id);
+          await configService.saveRoomConfig(novaSala.id, this.gameConfig);
+          console.log('Game configuration saved successfully');
+        }
         
         // Show success message
         this.$emit('sala-created', novaSala);

@@ -198,6 +198,12 @@ const validateForm = () => {
 };
 
 const handleSubmit = async () => {
+  // Prevent multiple submissions
+  if (loading.value) {
+    console.log('Login already processing, ignoring...');
+    return;
+  }
+
   if (!validateForm()) return;
 
   loading.value = true;
