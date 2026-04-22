@@ -6,56 +6,27 @@ export const userRoomService = {
   // Get all rooms for the current user
   async getUserRooms() {
     try {
-      console.log('=== userRoomService.getUserRooms() debug start ===');
-      
-      // Debug user ID storage
-      userIdUtils.debugUserIdStorage();
-      
-      // Get consistent user ID
       const userId = userIdUtils.ensureConsistentUserId();
       
       if (!userId) {
-        console.log('No valid user ID found');
         throw new Error('User not authenticated');
       }
-
-      console.log('Validated user ID:', userId);
 
       // Get username for migration
       const currentUser = JSON.parse(localStorage.getItem('currentUser'));
       const username = currentUser?.username || 'unknown';
 
       // Check if migration is needed and perform it
-      console.log('=== Checking migration need ===');
       const migrationNeeded = await userIdMigration.needsMigration(userId, username);
       
       if (migrationNeeded) {
-        console.log('Migration needed, attempting auto-migration...');
         const migrationSuccess = await userIdMigration.autoMigrateIfNeeded(userId, username);
         
         if (!migrationSuccess) {
-          console.error('Auto-migration failed, but continuing with normal flow');
+          console.warn('Auto-migration failed, user may need manual intervention');
         }
       }
 
-      // Debug: Check all user_rooms entries for this user (including inactive)
-      console.log('=== Debug: Checking all user_rooms entries ===');
-      const { data: allUserRooms, error: allUserRoomsError } = await supabase
-        .from('user_rooms')
-        .select('*')
-        .eq('user_id', userId);
-      
-      console.log('All user_rooms for this user:', allUserRooms);
-      console.log('All user_rooms error:', allUserRoomsError);
-      
-      // Debug: Check if there are any entries at all in user_rooms table
-      const { data: allRooms, error: allRoomsError } = await supabase
-        .from('user_rooms')
-        .select('*')
-        .limit(5);
-      
-      console.log('Sample user_rooms data:', allRooms);
-      console.log('Sample user_rooms error:', allRoomsError);
 
       // First get user's room associations
       const { data: userRoomData, error: userRoomError } = await supabase
@@ -71,27 +42,14 @@ export const userRoomService = {
         return [];
       }
 
-      // Debug: Check if there are any rooms at all
-      console.log('=== Debug: Checking salas table ===');
-      const { data: allSalas, error: allSalasError } = await supabase
-        .from('salas')
-        .select('id, nome, created_by')
-        .limit(5);
-      
-      console.log('Sample salas data:', allSalas);
-      console.log('Sample salas error:', allSalasError);
 
       // Get room details for each room
       const roomIds = userRoomData.map(ur => ur.sala_id);
-      console.log('Room IDs to fetch:', roomIds);
       
       const { data: roomsData, error: roomsError } = await supabase
         .from('salas')
         .select('id, nome, tipo, descricao, data_expiracao, capacidade, created_by')
         .in('id', roomIds);
-
-      console.log('Rooms data from batch query:', roomsData);
-      console.log('Rooms error from batch query:', roomsError);
 
       if (roomsError) throw roomsError;
 
@@ -105,12 +63,9 @@ export const userRoomService = {
         };
       });
       
-      console.log('Combined data with orphaned check:', combinedData);
-      
       // Clean up orphaned associations (rooms that don't exist anymore)
       const orphanedAssociations = combinedData.filter(item => item.isOrphaned);
       if (orphanedAssociations.length > 0) {
-        console.log('Found orphaned associations, cleaning up:', orphanedAssociations);
         
         // Delete orphaned associations
         const orphanedIds = orphanedAssociations.map(item => item.id);
@@ -121,14 +76,11 @@ export const userRoomService = {
           
         if (deleteError) {
           console.error('Error cleaning up orphaned associations:', deleteError);
-        } else {
-          console.log('Successfully cleaned up orphaned associations');
         }
       }
       
       // Return only valid rooms (not orphaned)
       const validRooms = combinedData.filter(item => !item.isOrphaned);
-      console.log('Final valid rooms:', validRooms);
       
       return validRooms;
     } catch (error) {
@@ -147,7 +99,6 @@ export const userRoomService = {
         throw new Error('User not authenticated');
       }
 
-      console.log('Joining room with user ID:', userId);
 
       const { data, error } = await supabase
         .from('user_rooms')
@@ -164,7 +115,6 @@ export const userRoomService = {
       if (error) {
         // Handle 409 conflict (duplicate) gracefully
         if (error.code === '409' || error.code === 'PGRST116') {
-          console.log('User already in room, updating access time');
           // Try to update the existing record
           const { data: updateData, error: updateError } = await supabase
             .from('user_rooms')
@@ -334,7 +284,6 @@ export const userRoomService = {
       // Identify and clean up orphaned associations
       const orphanedAssociations = userRoomData.filter(ur => !existingRoomIds.has(ur.sala_id));
       if (orphanedAssociations.length > 0) {
-        console.log('Found orphaned associations in stats, cleaning up:', orphanedAssociations);
         
         const orphanedIds = orphanedAssociations.map(item => item.id);
         const { error: deleteError } = await supabase
@@ -344,8 +293,6 @@ export const userRoomService = {
           
         if (deleteError) {
           console.error('Error cleaning up orphaned associations in stats:', deleteError);
-        } else {
-          console.log('Successfully cleaned up orphaned associations in stats');
         }
       }
 

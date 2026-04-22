@@ -253,41 +253,26 @@ const loadUserRooms = async () => {
   error.value = null;
   
   try {
-    console.log('=== Loading user rooms debug start ===');
-    
     // Check if user is authenticated
     const currentUser = authService.getCurrentUser();
-    console.log('Current user from authService:', currentUser);
     
     if (!currentUser) {
-      console.log('No authenticated user found');
       error.value = 'Usuário não autenticado';
       return;
     }
     
-    console.log('User ID:', currentUser.id);
-    console.log('User Username:', currentUser.username);
-    
     // Try to get user rooms
-    console.log('Calling userRoomService.getUserRooms()...');
     const rooms = await userRoomService.getUserRooms();
-    console.log('User rooms loaded successfully:', rooms);
-    console.log('User rooms loaded successfully:', rooms);
     userRooms.value = rooms;
     
     // Try to get stats (this might be failing)
-    console.log('Calling userRoomService.getUserRoomStats()...');
     try {
       const userStats = await userRoomService.getUserRoomStats();
-      console.log('User stats loaded successfully:', userStats);
       stats.value = userStats;
     } catch (statsError) {
       console.error('Error loading stats (but rooms loaded):', statsError);
-      // Don't fail the whole loading if stats fail
       stats.value = null;
     }
-    
-    console.log('=== Loading user rooms debug end ===');
   } catch (err) {
     console.error('=== Error loading user rooms ===');
     console.error('Error details:', err);
@@ -381,7 +366,6 @@ const closeConfigModal = () => {
 };
 
 const handleConfigurationSaved = (config) => {
-  console.log('Configuration saved:', config);
   // Could show a success message or refresh data if needed
 };
 

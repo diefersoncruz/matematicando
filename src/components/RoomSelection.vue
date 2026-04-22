@@ -225,17 +225,10 @@ export default {
       this.error = null;
       
       try {
-        console.log('Fetching user rooms...');
         const userRooms = await userRoomService.getUserRooms();
-        console.log('User rooms fetched:', userRooms);
         
         // Extract room data from user rooms (userRooms contains the association + room data)
         this.rooms = userRooms.map(userRoom => userRoom.salas).filter(room => room !== null);
-        console.log('Available rooms:', this.rooms);
-        
-        if (this.rooms.length === 0) {
-          console.log('No user rooms found');
-        }
       } catch (error) {
         console.error('Error fetching user rooms:', error);
         this.error = error.message || 'Não foi possível carregar suas salas';
@@ -245,22 +238,15 @@ export default {
     },
     
     isRoomAvailable(room) {
-      console.log('Checking room availability for:', room);
-      
       // Check if room is not expired
       if (room.data_expiracao) {
         const expiryDate = new Date(room.data_expiracao);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        console.log('Room expiry date:', expiryDate);
-        console.log('Today date:', today);
-        console.log('Is expired?', expiryDate < today);
-        
         return expiryDate >= today;
       }
       
-      console.log('No expiry date, room is available');
       return true;
     },
     

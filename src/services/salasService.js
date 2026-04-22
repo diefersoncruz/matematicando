@@ -42,28 +42,21 @@ export const salasService = {
   // Create new sala
   async createSala(salaData) {
     try {
-      console.log('=== salasService.createSala Debug ===');
-      
       // Get current user ID to set as creator
       const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-      console.log('Current user from localStorage:', currentUser);
       
       const createdBy = currentUser?.id || null;
-      console.log('Created by ID:', createdBy);
-      console.log('Created by type:', typeof createdBy);
 
       const salaDataToInsert = {
         nome: salaData.nome,
         descricao: salaData.descricao || null,
-        data_expiracao: salaData.dataExpiracao || null,
-        capacidade: salaData.capacidade ? parseInt(salaData.capacidade) : null,
-        tipo: salaData.tipo || 'aula',
+        tipo: salaData.tipo || 'publica',
+        data_expiracao: salaData.data_expiracao || null,
+        capacidade: salaData.capacidade || null,
         created_by: createdBy,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-      
-      console.log('Sala data to insert:', salaDataToInsert);
 
       const { data, error } = await supabase
         .from('salas')
@@ -73,12 +66,8 @@ export const salasService = {
 
       if (error) throw error;
       
-      console.log('Sala created successfully:', data);
-      console.log('Sala created_by field:', data.created_by);
-      
       // Create automatic association for the creator
       if (createdBy && data) {
-        console.log('Creating automatic user-room association...');
         try {
           const associationData = {
             user_id: createdBy,
@@ -95,18 +84,13 @@ export const salasService = {
             
           if (associationError) {
             console.error('Error creating automatic user-room association:', associationError);
-          } else {
-            console.log('Automatic user-room association created successfully');
           }
         } catch (associationError) {
           console.error('Error creating automatic user-room association:', associationError);
-          // Don't throw error here - the sala was created successfully
-          // Just log the error for debugging
         }
       }
       
-      console.log('=== End salasService.createSala Debug ===');
-      
+      console.log('Sala created successfully:', data);
       return data;
     } catch (error) {
       console.error('Error creating sala:', error);

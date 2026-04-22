@@ -69,9 +69,6 @@ export const rankingService = {
   // Save or update a player's score
   async savePlayerScore(salaId, playerName, hits, errors, totalTimeSeconds) {
     try {
-      console.log('=== savePlayerScore Debug ===');
-      console.log('Parâmetros:', { salaId, playerName, hits, errors, totalTimeSeconds });
-      
       // First check if player already has a score in this sala
       const { data: existingScore, error: fetchError } = await supabase
         .from('game_scores')
@@ -84,25 +81,15 @@ export const rankingService = {
         throw fetchError;
       }
 
-      console.log('Score existente:', existingScore);
-      console.log('Fetch error:', fetchError);
-
       let result;
       
       if (existingScore) {
-        console.log('Comparando scores:');
-        console.log('Existente - hits:', existingScore.hits, 'errors:', existingScore.errors, 'tempo:', existingScore.total_time_seconds);
-        console.log('Novo     - hits:', hits, 'errors:', errors, 'tempo:', totalTimeSeconds);
-        
         // Update existing score only if it's better
         const isNewScoreBetter = hits > existingScore.hits || 
             (hits === existingScore.hits && errors < existingScore.errors) ||
             (hits === existingScore.hits && errors === existingScore.errors && totalTimeSeconds < existingScore.total_time_seconds);
         
-        console.log('Novo score é melhor?', isNewScoreBetter);
-        
         if (isNewScoreBetter) {
-          console.log('Atualizando score existente...');
           const { data, error } = await supabase
             .from('game_scores')
             .update({
@@ -117,14 +104,11 @@ export const rankingService = {
 
           if (error) throw error;
           result = data;
-          console.log('Score atualizado:', result);
         } else {
           // Keep existing score if it's better
-          console.log('Mantendo score existente (é melhor)');
           result = existingScore;
         }
       } else {
-        console.log('Inserindo novo score...');
         // Insert new score
         const { data, error } = await supabase
           .from('game_scores')
@@ -140,7 +124,6 @@ export const rankingService = {
 
         if (error) throw error;
         result = data;
-        console.log('Novo score inserido:', result);
       }
 
       return result;

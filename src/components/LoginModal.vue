@@ -210,26 +210,16 @@ const handleSubmit = async () => {
   error.value = null;
 
   try {
-    console.log('LoginModal: Starting authentication process...');
-    console.log('LoginModal: Form data:', { 
-      name: formData.name,
-      email: formData.email
-    });
     
     let result;
     
     if (isLogin.value) {
       // Login - apenas autentica usuário existente
-      console.log('LoginModal: Attempting login...');
       result = await authService.loginUser(formData.email, formData.password);
     } else {
       // Register - cria novo usuário
-      console.log('LoginModal: Attempting registration...');
       result = await authService.registerUser(formData.name, formData.email, formData.password);
     }
-
-    console.log('LoginModal: Authentication successful:', result);
-    console.log('LoginModal: Emitting login-success event');
     emit('login-success', result.user);
     closeModal();
   } catch (err) {

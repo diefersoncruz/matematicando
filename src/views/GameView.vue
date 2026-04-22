@@ -270,7 +270,6 @@ const toggleJogo = () => {
       // Verificar se atingiu o tempo limite
       const configuracoes = getConfig();
       if (configuracoes && tempoSegundos.value >= configuracoes.limiteTempo) {
-        console.log('Tempo limite atingido, parando jogo automaticamente');
         pararJogo(false, atualizarDados);
         clearInterval(intervaloCronometro.value);
         intervaloCronometro.value = null;
@@ -307,7 +306,6 @@ const handleRoomSelected = (room) => {
       // Verificar se atingiu o tempo limite
       const configuracoes = getConfig();
       if (configuracoes && tempoSegundos.value >= configuracoes.limiteTempo) {
-        console.log('Tempo limite atingido, parando jogo automaticamente');
         pararJogo(false, atualizarDados);
         clearInterval(intervaloCronometro.value);
         intervaloCronometro.value = null;
@@ -362,11 +360,6 @@ const saveGameScore = async () => {
   const playerName = authService.getCurrentName() || authService.getCurrentUsername();
   
   try {
-    console.log('=== saveGameScore Debug ===');
-    console.log('Sala ID:', selectedRoom.value.id);
-    console.log('Player Name:', playerName);
-    console.log('Score:', { acertos: acertos.value, erros: erros.value, tempo: tempoSegundos.value });
-    
     const result = await rankingService.savePlayerScore(
       selectedRoom.value.id,
       playerName,
@@ -375,20 +368,13 @@ const saveGameScore = async () => {
       tempoSegundos.value
     );
     
-    console.log('Score salvo no banco:', result);
-    
     // Trigger ranking refresh in the Ranking component
     if (rankingRef.value) {
-      console.log('Disparando refresh do ranking...');
       setTimeout(() => {
         rankingRef.value.refreshRanking();
-        console.log('Refresh do ranking disparado');
       }, 500); // Small delay to ensure score is saved
-    } else {
-      console.log('rankingRef.value é null/undefined');
     }
   } catch (error) {
-    console.error('Erro ao salvar score:', error);
     // Don't show error to user to avoid interrupting game flow
   }
 };
