@@ -171,7 +171,10 @@
 </template>
 
 <script>
-import { salasService } from '@/services/salasService.js';
+import { ref, onMounted } from 'vue';
+import { salasService } from '../services/salasService.js';
+import { authService } from '../services/authService.js';
+import { secureStorage } from '../utils/secureStorage.js';
 
 export default {
   name: "SalasView",
@@ -211,7 +214,7 @@ export default {
 
     criarNovaSala() {
       // Check if user is authenticated
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      const currentUser = authService.getCurrentUser();
       if (!currentUser) {
         alert('Você precisa estar logado para criar uma sala. Por favor, faça login primeiro.');
         return;
@@ -224,8 +227,8 @@ export default {
     },
     
     playInRoom(sala) {
-      // Store the selected room and navigate to game
-      localStorage.setItem('currentRoom', JSON.stringify(sala));
+      // Store selected room and navigate to game
+      secureStorage.setItem('currentRoom', sala);
       this.$router.push('/jogo');
     },
     

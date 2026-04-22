@@ -110,6 +110,7 @@
 <script setup>
 import { ref, reactive, nextTick } from 'vue';
 import { authService } from '@/services/authService.js';
+import { validateEmail, validatePassword, validateName } from '@/utils/validation.js';
 
 // Props
 const props = defineProps({
@@ -182,8 +183,9 @@ const toggleMode = () => {
 
 const validateForm = () => {
   // Validate email for both login and registration
-  if (!formData.email || !formData.email.includes('@')) {
-    error.value = 'Por favor, insira um email válido';
+  const emailValidation = validateEmail(formData.email);
+  if (!emailValidation.isValid) {
+    error.value = emailValidation.error || 'Por favor, insira um email válido';
     return false;
   }
 
@@ -194,16 +196,18 @@ const validateForm = () => {
   }
 
   // Validate password
-  if (formData.password.length < 6) {
-    error.value = 'A senha deve ter pelo menos 6 caracteres';
+  const passwordValidation = validatePassword(formData.password);
+  if (!passwordValidation.isValid) {
+    error.value = passwordValidation.error || 'Senha inválida';
     return false;
   }
 
   // Additional validations for registration
   if (!isLogin.value) {
     // Validate name
-    if (!formData.name || formData.name.length < 2) {
-      error.value = 'O nome deve ter pelo menos 2 caracteres';
+    const nameValidation = validateName(formData.name);
+    if (!nameValidation.isValid) {
+      error.value = nameValidation.error || 'Nome inválido';
       return false;
     }
 

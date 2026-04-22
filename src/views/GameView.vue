@@ -143,6 +143,7 @@ import { iniciarJogo, pararJogo } from "../services/controler.js";
 import { gerarOperacao, validarResultado, operacoes, operadorMatematicoAtual, getConfig } from "../services/game.js";
 import { rankingService } from "../services/rankingService.js";
 import { authService } from "@/services/authService.js";
+import { secureStorage } from '@/utils/secureStorage.js';
 import Ranking from "@/components/Ranking.vue";
 import RoomSelection from "@/components/RoomSelection.vue";
 
@@ -294,7 +295,7 @@ const handleRoomSelected = (room) => {
   showRoomSelection.value = false;
   
   // Store room context for game session
-  localStorage.setItem('currentRoom', JSON.stringify(room));
+  secureStorage.setItem('currentRoom', room);
   
   // Auto-start game after room selection
   nextTick(() => {
@@ -436,14 +437,10 @@ const verificarResposta = () => {
 };
 
 onMounted(() => {
-  // Restore room from localStorage if available
-  const savedRoom = localStorage.getItem('currentRoom');
+  // Restore room from secure storage if available
+  const savedRoom = secureStorage.getItem('currentRoom');
   if (savedRoom) {
-    try {
-      selectedRoom.value = JSON.parse(savedRoom);
-    } catch (error) {
-      localStorage.removeItem('currentRoom');
-    }
+    selectedRoom.value = savedRoom;
   }
   
   // Show room selection only for authenticated users if no room is available

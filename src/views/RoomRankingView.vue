@@ -173,6 +173,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { rankingService } from '@/services/rankingService.js';
 import { salasService } from '@/services/salasService.js';
 import { authService } from '@/services/authService.js';
+import { secureStorage } from '@/utils/secureStorage.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -239,8 +240,8 @@ const goBack = () => {
 
 const playInRoom = () => {
   if (room.value) {
-    // Store the selected room and navigate to game
-    localStorage.setItem('currentRoom', JSON.stringify(room.value));
+    // Store selected room and navigate to game
+    secureStorage.setItem('currentRoom', room.value);
     router.push(`/jogo/${room.value.id}`);
   }
 };

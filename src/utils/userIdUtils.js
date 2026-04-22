@@ -1,15 +1,16 @@
 // Utility functions for consistent user ID handling
 
+import { secureStorage } from './secureStorage.js';
+
 export const userIdUtils = {
   // Get current user ID with validation
   getCurrentUserId() {
     try {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      const currentUser = secureStorage.getItem('currentUser');
       if (!currentUser || !currentUser.id) {
-        console.error('No current user or user ID found in localStorage');
+        console.error('No current user or user ID found in secure storage');
         return null;
       }
-      
       
       return currentUser.id;
     } catch (error) {

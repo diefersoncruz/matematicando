@@ -1,6 +1,7 @@
 import { supabase, handleSupabaseError } from './supabase.js';
-import { userIdUtils } from '@/utils/userIdUtils.js';
-import { userIdMigration } from '@/utils/userIdMigration.js';
+import { userIdUtils } from '../utils/userIdUtils.js';
+import { userIdMigration } from '../utils/userIdMigration.js';
+import { secureStorage } from '../utils/secureStorage.js';
 
 export const userRoomService = {
   // Get all rooms for the current user
@@ -13,7 +14,7 @@ export const userRoomService = {
       }
 
       // Get username for migration
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      const currentUser = secureStorage.getItem('currentUser');
       const username = currentUser?.username || 'unknown';
 
       // Check if migration is needed and perform it
@@ -145,7 +146,7 @@ export const userRoomService = {
   // Leave a room
   async leaveRoom(salaId) {
     try {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      const currentUser = secureStorage.getItem('currentUser');
       if (!currentUser) {
         throw new Error('User not authenticated');
       }
@@ -167,7 +168,7 @@ export const userRoomService = {
   // Update last accessed time
   async updateRoomAccess(salaId) {
     try {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      const currentUser = secureStorage.getItem('currentUser');
       if (!currentUser) {
         return; // Silently fail if not authenticated
       }
@@ -191,7 +192,7 @@ export const userRoomService = {
   // Check if user is member of room
   async isRoomMember(salaId) {
     try {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      const currentUser = secureStorage.getItem('currentUser');
       if (!currentUser) {
         return false;
       }

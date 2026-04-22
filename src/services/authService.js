@@ -1,4 +1,5 @@
 import { supabase, handleSupabaseError } from './supabase.js';
+import { secureStorage } from '../utils/secureStorage.js';
 
 
 export const authService = {
@@ -66,7 +67,7 @@ export const authService = {
         throw error;
       }
 
-      // Store user info in localStorage after successful registration
+      // Store user info in secure storage after successful registration
       // Note: User may need email confirmation depending on Supabase settings
       if (authData.user) {
         const currentUser = {
@@ -79,8 +80,7 @@ export const authService = {
           email_confirmed: !authError // Track if email confirmation is needed
         };
         
-                
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        secureStorage.setItem('currentUser', currentUser);
       }
 
       return {
@@ -103,7 +103,7 @@ export const authService = {
 
       if (error) throw error;
 
-      // Store user info in localStorage
+      // Store user info in secure storage
       if (data.user) {
         // Update last_login in database
         try {
@@ -123,7 +123,7 @@ export const authService = {
           last_login: new Date().toISOString()
         };
         
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        secureStorage.setItem('currentUser', currentUser);
       }
 
       return data;
@@ -140,8 +140,8 @@ export const authService = {
       if (error) throw error;
 
       // Clear all auth-related data
-      localStorage.removeItem('currentUser');
-      localStorage.removeItem('currentRoom');
+      secureStorage.removeItem('currentUser');
+      secureStorage.removeItem('currentRoom');
       
       // Clear any other auth-related data
       Object.keys(localStorage).forEach(key => {
@@ -160,11 +160,7 @@ export const authService = {
   // Get current user
   getCurrentUser() {
     try {
-      const userStr = localStorage.getItem('currentUser');
-      if (userStr) {
-        return JSON.parse(userStr);
-      }
-      return null;
+      return secureStorage.getItem('currentUser');
     } catch (error) {
       console.error('Error getting current user:', error);
       return null;
@@ -212,11 +208,11 @@ export const authService = {
 
       if (authError) throw authError;
 
-      // Update localStorage
-      localStorage.setItem('currentUser', JSON.stringify({
+      // Update secure storage
+      secureStorage.setItem('currentUser', {
         ...currentUser,
         username: username
-      }));
+      });
 
       return true;
     } catch (error) {
@@ -230,78 +226,4 @@ export const authService = {
     return supabase.auth.onAuthStateChange(callback);
   },
 
-  
-  
-  // Simple authentication (for demo purposes) - mantido para compatibilidade
-  async simpleAuth(username, password) {
-    try {
-      
-      // Simple hash function for demo (in production use proper hashing)
-      const hashPassword = (pwd) => btoa(pwd + 'salt');
-      
-      // First, check if user exists in our database
-      const { data: existingUser, error: userError } = await supabase
-        .from('users')
-        .select('id, username, password_hash, created_at')
-        .eq('username', username)
-        .single();
-
-      let user;
-      
-      if (existingUser) {
-        // User exists, validate password
-        const hashedPassword = hashPassword(password);
-        
-        if (existingUser.password_hash !== hashedPassword) {
-          throw new Error('Senha incorreta');
-        }
-        
-        user = {
-          id: existingUser.id,
-          username: existingUser.username,
-          email: `${username}@matematicando.local`
-        };
-      } else {
-        // User doesn't exist, create new user
-        const hashedPassword = hashPassword(password);
-        
-        const { data: newUser, error: createError } = await supabase
-          .from('users')
-          .insert([{
-            username: username,
-            password_hash: hashedPassword,
-            created_at: new Date().toISOString()
-          }])
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Erro ao criar usuário:', createError);
-          throw createError;
-        }
-
-        console.log('Novo usuário criado:', newUser);
-        user = {
-          id: newUser.id,
-          username: newUser.username,
-          email: `${username}@matematicando.local`
-        };
-      }
-
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      console.log('Usuário armazenado no localStorage:', user);
-      console.log('=== Fim da autenticação do usuário ===');
-      
-      return { user };
-    } catch (error) {
-      console.error('Erro na autenticação simples:', error);
-      throw error;
-    }
-  },
-
-  // Simple logout
-  simpleLogout() {
-    localStorage.removeItem('currentUser');
-    return true;
-  }
 };
