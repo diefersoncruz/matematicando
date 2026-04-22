@@ -1,7 +1,5 @@
 import { supabase, handleSupabaseError } from './supabase.js';
 
-// Cache busting - force reload
-console.log('authService.js loaded - version 2025-04-21-01-45');
 
 export const authService = {
   // Check if email already exists
@@ -14,7 +12,6 @@ export const authService = {
       if (error) throw error;
       return data; // Returns true if email exists, false otherwise
     } catch (error) {
-      console.error('Error checking email existence:', error);
       return false;
     }
   },
@@ -60,12 +57,6 @@ export const authService = {
         p_password: password
       });
       
-      console.log('=== Database Debug ===');
-      console.log('Creating user with params:', {
-        p_name: name,
-        p_email: email,
-        p_username: email.split('@')[0]
-      });
 
       if (error) {
         // Handle database constraint error for duplicate email
@@ -88,12 +79,7 @@ export const authService = {
           email_confirmed: !authError // Track if email confirmation is needed
         };
         
-        console.log('=== authService Registration Debug ===');
-        console.log('User data stored after registration:', currentUser);
-        console.log('Name stored:', currentUser.name);
-        console.log('Last login set:', currentUser.last_login);
-        console.log('Email confirmation needed:', !currentUser.email_confirmed);
-        
+                
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
       }
 
@@ -103,8 +89,7 @@ export const authService = {
         needsEmailConfirmation: !!(authData.user && authError?.message?.includes('Email not confirmed'))
       };
     } catch (error) {
-      console.error('Error registering user:', error);
-      throw new Error(error.message || 'Ocorreu um erro ao cadastrar usuário. Tente novamente.');
+            throw new Error(error.message || 'Ocorreu um erro ao cadastrar usuário. Tente novamente.');
     }
   },
 
@@ -125,9 +110,7 @@ export const authService = {
           await supabase.rpc('update_last_login', {
             p_email: email
           });
-          console.log('Last login updated for:', email);
         } catch (error) {
-          console.error('Error updating last login:', error);
           // Continue with login even if last_login update fails
         }
 
@@ -140,17 +123,12 @@ export const authService = {
           last_login: new Date().toISOString()
         };
         
-        console.log('=== authService Login Debug ===');
-        console.log('Email used for login:', email);
-        console.log('User data stored:', currentUser);
-        
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
       }
 
       return data;
     } catch (error) {
-      console.error('Error logging in user:', error);
-      throw new Error(handleSupabaseError(error));
+            throw new Error(handleSupabaseError(error));
     }
   },
 
@@ -172,14 +150,10 @@ export const authService = {
         }
       });
       
-      console.log('=== authService Logout Debug ===');
-      console.log('User logged out successfully');
-      console.log('LocalStorage cleared');
       
       return true;
     } catch (error) {
-      console.error('Error logging out user:', error);
-      throw new Error(handleSupabaseError(error));
+            throw new Error(handleSupabaseError(error));
     }
   },
 
@@ -206,27 +180,18 @@ export const authService = {
   // Get current username
   getCurrentUsername() {
     const user = this.getCurrentUser();
-    console.log('=== getCurrentUsername Debug ===');
-    console.log('User data:', user);
-    console.log('Username:', user ? user.username : 'Jogador Anônimo');
     return user ? user.username : 'Jogador Anônimo';
   },
 
   // Get current name
   getCurrentName() {
     const user = this.getCurrentUser();
-    console.log('=== getCurrentName Debug ===');
-    console.log('User data:', user);
-    console.log('Name:', user ? user.name : '');
     return user ? user.name : '';
   },
 
   // Get current email
   getCurrentEmail() {
     const user = this.getCurrentUser();
-    console.log('=== getCurrentEmail Debug ===');
-    console.log('User data:', user);
-    console.log('Email:', user ? user.email : '');
     return user ? user.email : '';
   },
 

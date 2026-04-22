@@ -47,8 +47,7 @@ const handleLogoutSuccess = () => {
   if (userProfileRef.value) {
     userProfileRef.value.updateUser();
   }
-  console.log('App: User logged out successfully');
-};
+  };
 
 const permanent = ref(false);
 

@@ -57,14 +57,12 @@ const logout = async () => {
     // Emit event to parent components to handle logout
     emit('logout-success');
   } catch (error) {
-    console.error('Logout error:', error);
-  }
+      }
 };
 
 const loadCurrentUser = () => {
   currentUser.value = authService.getCurrentUser();
-  console.log('UserProfile: Current user loaded:', currentUser.value);
-};
+  };
 
 const updateUser = () => {
   loadCurrentUser();
