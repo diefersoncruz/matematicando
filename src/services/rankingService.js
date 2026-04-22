@@ -9,16 +9,22 @@ export const rankingService = {
         .select('*')
         .eq('sala_id', salaId)
         .order('hits', { ascending: false })
-        .order('accuracy', { ascending: false })
+        .order('errors', { ascending: true })
         .order('total_time_seconds', { ascending: true })
+        .order('created_at', { ascending: false })
         .limit(limit);
 
       if (error) throw error;
       
-      // Add position numbers
+      // Add position numbers and format data
       const rankingWithPositions = data.map((score, index) => ({
         ...score,
-        rank_position: index + 1
+        rank_position: index + 1,
+        name: score.player_name || 'Jogador Anônimo',
+        score: score.hits || 0, // Usar hits como score principal
+        hits: score.hits || 0,
+        errors: score.errors || 0,
+        total_time_seconds: score.total_time_seconds || 0
       }));
       
       return rankingWithPositions;

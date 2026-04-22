@@ -4,6 +4,7 @@ import HomeView from "@/views/GameView.vue";
 import SalasView from "@/views/SalasView.vue";
 import SalaForm from "@/views/SalaForm.vue";
 import UserRoomsView from "@/views/UserRoomsView.vue";
+import RoomRankingView from "@/views/RoomRankingView.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -13,6 +14,7 @@ const router = createRouter({
     { path: "/salas/criar", component: SalaForm, meta: { requiresAuth: false } },
     { path: "/salas/editar/:id", component: SalaForm, meta: { requiresAuth: false } },
     { path: "/sala/:id", component: HomeView, meta: { requiresAuth: false } },
+    { path: "/sala/:id/ranking", component: RoomRankingView, meta: { requiresAuth: false } },
     { path: "/jogo", component: HomeView, meta: { requiresAuth: false } },
     { path: "/jogo/:salaId", component: HomeView, meta: { requiresAuth: false } },
     { path: "/minhas-salas", component: UserRoomsView, meta: { requiresAuth: true } },

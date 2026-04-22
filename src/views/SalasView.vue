@@ -220,8 +220,7 @@ export default {
     },
     
     viewSala(sala) {
-      console.log('Viewing sala:', sala);
-      // Future: Navigate to sala details page
+      this.$router.push(`/sala/${sala.id}/ranking`);
     },
     
     playInRoom(sala) {
