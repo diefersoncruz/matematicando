@@ -90,5 +90,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Step 8: Create function to update last login
+CREATE OR REPLACE FUNCTION update_last_login(p_email TEXT)
+RETURNS VOID AS $$
+BEGIN
+    -- Update last login timestamp for user
+    UPDATE users 
+    SET last_login = NOW() 
+    WHERE email = p_email;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Test function
 SELECT 'User schema updated successfully' as status;

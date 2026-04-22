@@ -40,7 +40,7 @@ import { ref, onMounted } from 'vue';
 import { authService } from '@/services/authService.js';
 
 // Emits
-const emit = defineEmits(['show-login']);
+const emit = defineEmits(['show-login', 'logout-success']);
 
 // Data
 const currentUser = ref(null);
@@ -52,8 +52,10 @@ const showLoginModal = () => {
 
 const logout = async () => {
   try {
-    await authService.simpleLogout();
+    await authService.logout();
     currentUser.value = null;
+    // Emit event to parent components to handle logout
+    emit('logout-success');
   } catch (error) {
     console.error('Logout error:', error);
   }

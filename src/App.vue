@@ -7,7 +7,7 @@
         <router-link to="/jogo" class="nav-link">Jogo</router-link>
       </nav>
       
-      <UserProfile ref="userProfileRef" @show-login="showLoginModal = true" />
+      <UserProfile ref="userProfileRef" @show-login="showLoginModal = true" @logout-success="handleLogoutSuccess" />
     </header>
     
     <main class="main-content">
@@ -20,7 +20,7 @@
     
     <LoginModal 
       :showModal="showLoginModal" 
-      @close="showLoginModal = false"
+      @close="() => { console.log('DEBUG: Evento close recebido no App'); showLoginModal = false; }"
       @login-success="handleLoginSuccess"
     />
   </div>
@@ -41,6 +41,14 @@ const handleLoginSuccess = () => {
   }
   showLoginModal.value = false;
 }
+
+const handleLogoutSuccess = () => {
+  // Update UserProfile to reflect logged-out state
+  if (userProfileRef.value) {
+    userProfileRef.value.updateUser();
+  }
+  console.log('App: User logged out successfully');
+};
 
 const permanent = ref(false);
 

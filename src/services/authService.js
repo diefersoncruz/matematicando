@@ -39,6 +39,11 @@ export const authService = {
         }
       });
 
+      // Note: Supabase requires email confirmation by default
+      // We'll handle this by either:
+      // 1. Configuring Supabase to disable email confirmation (in dashboard)
+      // 2. Or handling the user as logged in after registration
+
       if (authError) {
         // Handle Supabase auth errors for duplicate email
         if (authError.message.includes('already registered') || authError.message.includes('already been registered')) {
@@ -71,25 +76,31 @@ export const authService = {
       }
 
       // Store user info in localStorage after successful registration
+      // Note: User may need email confirmation depending on Supabase settings
       if (authData.user) {
         const currentUser = {
           id: authData.user.id,
           username: email.split('@')[0], // Use email prefix as username
           email: email,
           name: name, // Ensure name is stored correctly
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          last_login: new Date().toISOString(), // Set last_login to registration time
+          email_confirmed: !authError // Track if email confirmation is needed
         };
         
         console.log('=== authService Registration Debug ===');
         console.log('User data stored after registration:', currentUser);
         console.log('Name stored:', currentUser.name);
+        console.log('Last login set:', currentUser.last_login);
+        console.log('Email confirmation needed:', !currentUser.email_confirmed);
         
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
       }
 
       return {
         user: authData.user,
-        profile: data
+        profile: data,
+        needsEmailConfirmation: !!(authData.user && authError?.message?.includes('Email not confirmed'))
       };
     } catch (error) {
       console.error('Error registering user:', error);
@@ -109,12 +120,24 @@ export const authService = {
 
       // Store user info in localStorage
       if (data.user) {
+        // Update last_login in database
+        try {
+          await supabase.rpc('update_last_login', {
+            p_email: email
+          });
+          console.log('Last login updated for:', email);
+        } catch (error) {
+          console.error('Error updating last login:', error);
+          // Continue with login even if last_login update fails
+        }
+
         const currentUser = {
           id: data.user.id,
           username: email.split('@')[0], // Use email prefix as username
           email: email,
           name: data.user.user_metadata?.name || '',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          last_login: new Date().toISOString()
         };
         
         console.log('=== authService Login Debug ===');
@@ -138,8 +161,20 @@ export const authService = {
       
       if (error) throw error;
 
-      // Clear localStorage
+      // Clear all auth-related data
       localStorage.removeItem('currentUser');
+      localStorage.removeItem('currentRoom');
+      
+      // Clear any other auth-related data
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('auth_') || key.startsWith('supabase.auth.')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      console.log('=== authService Logout Debug ===');
+      console.log('User logged out successfully');
+      console.log('LocalStorage cleared');
       
       return true;
     } catch (error) {
@@ -230,51 +265,7 @@ export const authService = {
     return supabase.auth.onAuthStateChange(callback);
   },
 
-  // Login user - apenas autentica usuários existentes
-  async loginUser(username, password) {
-    try {
-      // Simple hash function for demo (in production use proper hashing)
-      const hashPassword = (pwd) => btoa(pwd + 'salt');
-      
-      // Check if user exists in our database
-      const { data: existingUser, error: userError } = await supabase
-        .from('users')
-        .select('id, username, password_hash, created_at')
-        .eq('username', username)
-        .single();
-
-      if (userError && userError.code === 'PGRST116') {
-        // User doesn't exist
-        throw new Error('Usuário não encontrado. Por favor, cadastre-se primeiro.');
-      }
-
-      if (userError) {
-        throw userError;
-      }
-
-      // User exists, validate password
-      const hashedPassword = hashPassword(password);
-      
-      if (existingUser.password_hash !== hashedPassword) {
-        throw new Error('Senha incorreta');
-      }
-      
-      const user = {
-        id: existingUser.id,
-        username: existingUser.username,
-        email: `${username}@matematicando.local`
-      };
-
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      console.log('Login bem-sucedido:', user);
-      
-      return { user };
-    } catch (error) {
-      console.error('Erro no login:', error);
-      throw error;
-    }
-  },
-
+  
   
   // Simple authentication (for demo purposes) - mantido para compatibilidade
   async simpleAuth(username, password) {

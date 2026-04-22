@@ -3,7 +3,7 @@
     <div class="login-modal">
       <div class="modal-header">
         <h2>{{ isLogin ? 'Login' : 'Cadastro' }}</h2>
-        <button @click="closeModal" class="close-btn">
+        <button @click.stop="closeModal" class="close-btn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="6" x2="18" y2="18"/>
@@ -90,7 +90,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, nextTick } from 'vue';
 import { authService } from '@/services/authService.js';
 
 // Props
@@ -120,7 +120,7 @@ const checkingEmail = ref(false);
 
 // Methods
 const closeModal = () => {
-  emit('close');
+  emit('cancelled');
   resetForm();
 };
 
@@ -174,8 +174,8 @@ const validateForm = () => {
   }
 
   // Validate password
-  if (formData.password.length < 4) {
-    error.value = 'A senha deve ter pelo menos 4 caracteres';
+  if (formData.password.length < 6) {
+    error.value = 'A senha deve ter pelo menos 6 caracteres';
     return false;
   }
 
@@ -233,6 +233,7 @@ const handleSubmit = async () => {
     loading.value = false;
   }
 };
+
 </script>
 
 <style scoped>
