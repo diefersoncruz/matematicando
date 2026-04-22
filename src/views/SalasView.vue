@@ -309,7 +309,7 @@ export default {
   font-size: 32px;
   font-weight: 700;
   color: #1f2937;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -328,7 +328,7 @@ export default {
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
   color: white;
   padding: 16px 24px;
   border-radius: 12px;
@@ -368,7 +368,7 @@ export default {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
   color: white;
 }
 
@@ -399,7 +399,7 @@ export default {
   width: 48px;
   height: 48px;
   border: 4px solid #e5e7eb;
-  border-top: 4px solid #667eea;
+  border-top: 4px solid #2563eb;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 16px;
@@ -504,7 +504,7 @@ export default {
 .sala-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-  border-color: #667eea;
+  border-color: #2563eb;
 }
 
 .card-header {
@@ -518,7 +518,7 @@ export default {
 .sala-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -648,9 +648,9 @@ export default {
 }
 
 .action-btn:hover {
-  background: #667eea;
+  background: #2563eb;
   color: white;
-  border-color: #667eea;
+  border-color: #2563eb;
 }
 
 .action-btn.btn-play {

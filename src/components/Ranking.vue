@@ -324,7 +324,7 @@ watch(() => props.currentRoom, () => {
 
 /* Room Header */
 .room-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
   color: white;
   padding: 20px;
   display: flex;
@@ -398,7 +398,7 @@ watch(() => props.currentRoom, () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
   color: white;
   border: none;
   padding: 12px 24px;
@@ -616,7 +616,7 @@ watch(() => props.currentRoom, () => {
   width: 32px;
   height: 32px;
   border: 3px solid #e5e7eb;
-  border-top: 3px solid #667eea;
+  border-top: 3px solid #2563eb;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 16px;
@@ -653,7 +653,7 @@ watch(() => props.currentRoom, () => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
   color: white;
   border: none;
   padding: 8px 16px;

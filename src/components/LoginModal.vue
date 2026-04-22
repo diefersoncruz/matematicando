@@ -319,7 +319,7 @@ const handleSubmit = async () => {
 
 .form-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -377,7 +377,7 @@ const handleSubmit = async () => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
   color: white;
 }
 
@@ -404,7 +404,7 @@ const handleSubmit = async () => {
 .link-btn {
   background: none;
   border: none;
-  color: #667eea;
+  color: #2563eb;
   cursor: pointer;
   font-weight: 500;
   text-decoration: underline;

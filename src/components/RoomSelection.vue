@@ -374,7 +374,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #667eea;
+  color: #2563eb;
   font-size: 14px;
   font-weight: 500;
   background: rgba(102, 126, 234, 0.1);
@@ -417,7 +417,7 @@ export default {
 }
 
 .search-input:focus {
-  border-color: #667eea;
+  border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -503,7 +503,7 @@ export default {
   width: 48px;
   height: 48px;
   border: 4px solid #e5e7eb;
-  border-top: 4px solid #667eea;
+  border-top: 4px solid #2563eb;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -558,13 +558,13 @@ export default {
 }
 
 .room-card:hover {
-  border-color: #667eea;
+  border-color: #2563eb;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .room-card.selected {
-  border-color: #667eea;
+  border-color: #2563eb;
   background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
 }
 
@@ -578,7 +578,7 @@ export default {
 .room-icon {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -693,7 +693,7 @@ export default {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
   color: white;
 }
 

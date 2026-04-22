@@ -468,7 +468,7 @@ onMounted(() => {
 .stat-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -509,7 +509,7 @@ onMounted(() => {
   width: 48px;
   height: 48px;
   border: 3px solid #e5e7eb;
-  border-top: 3px solid #667eea;
+  border-top: 3px solid #2563eb;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
@@ -694,7 +694,7 @@ onMounted(() => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
   color: white;
 }
 

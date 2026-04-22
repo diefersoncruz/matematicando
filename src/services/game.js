@@ -163,4 +163,4 @@ function getConfig() {
   return configuracoes;
 }
 
-export { gerarOperacao, validarResultado, zerarPontuacao, loadConfig, getConfig };
+export { gerarOperacao, validarResultado, zerarPontuacao, loadConfig, getConfig, operacoes, operadorMatematicoAtual };

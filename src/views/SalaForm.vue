@@ -335,7 +335,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   padding: 32px 32px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
   color: white;
   margin: -20px -20px 32px;
 }
@@ -409,7 +409,7 @@ export default {
 
 .form-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -472,17 +472,17 @@ export default {
 }
 
 .radio-option:hover {
-  border-color: #667eea;
+  border-color: #2563eb;
   background: #f9fafb;
 }
 
 .radio-option input:checked + .radio-custom + .radio-content {
-  color: #667eea;
+  color: #2563eb;
 }
 
 .radio-option input:checked + .radio-custom {
-  border-color: #667eea;
-  background: #667eea;
+  border-color: #2563eb;
+  background: #2563eb;
 }
 
 .radio-option input:checked + .radio-custom::after {
@@ -564,7 +564,7 @@ export default {
 }
 
 .btn-primary {
-  background: #667eea;
+  background: #2563eb;
   color: white;
 }
 

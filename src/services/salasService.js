@@ -75,6 +75,36 @@ export const salasService = {
       
       console.log('Sala created successfully:', data);
       console.log('Sala created_by field:', data.created_by);
+      
+      // Create automatic association for the creator
+      if (createdBy && data) {
+        console.log('Creating automatic user-room association...');
+        try {
+          const associationData = {
+            user_id: createdBy,
+            sala_id: data.id,
+            role: 'admin',
+            joined_at: new Date().toISOString(),
+            last_accessed: new Date().toISOString(),
+            is_active: true
+          };
+          
+          const { error: associationError } = await supabase
+            .from('user_rooms')
+            .insert([associationData]);
+            
+          if (associationError) {
+            console.error('Error creating automatic user-room association:', associationError);
+          } else {
+            console.log('Automatic user-room association created successfully');
+          }
+        } catch (associationError) {
+          console.error('Error creating automatic user-room association:', associationError);
+          // Don't throw error here - the sala was created successfully
+          // Just log the error for debugging
+        }
+      }
+      
       console.log('=== End salasService.createSala Debug ===');
       
       return data;

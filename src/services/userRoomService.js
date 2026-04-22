@@ -84,21 +84,53 @@ export const userRoomService = {
       // Get room details for each room
       const roomIds = userRoomData.map(ur => ur.sala_id);
       console.log('Room IDs to fetch:', roomIds);
+      
       const { data: roomsData, error: roomsError } = await supabase
         .from('salas')
         .select('id, nome, tipo, descricao, data_expiracao, capacidade, created_by')
         .in('id', roomIds);
 
+      console.log('Rooms data from batch query:', roomsData);
+      console.log('Rooms error from batch query:', roomsError);
+
       if (roomsError) throw roomsError;
 
-      // Combine the data
-      return userRoomData.map(userRoom => {
+      // Combine the data and identify orphaned associations
+      const combinedData = userRoomData.map(userRoom => {
         const room = roomsData.find(r => r.id === userRoom.sala_id);
         return {
           ...userRoom,
-          salas: room || null
+          salas: room || null,
+          isOrphaned: !room // Mark as orphaned if room not found
         };
-      }).filter(item => item.salas !== null);
+      });
+      
+      console.log('Combined data with orphaned check:', combinedData);
+      
+      // Clean up orphaned associations (rooms that don't exist anymore)
+      const orphanedAssociations = combinedData.filter(item => item.isOrphaned);
+      if (orphanedAssociations.length > 0) {
+        console.log('Found orphaned associations, cleaning up:', orphanedAssociations);
+        
+        // Delete orphaned associations
+        const orphanedIds = orphanedAssociations.map(item => item.id);
+        const { error: deleteError } = await supabase
+          .from('user_rooms')
+          .delete()
+          .in('id', orphanedIds);
+          
+        if (deleteError) {
+          console.error('Error cleaning up orphaned associations:', deleteError);
+        } else {
+          console.log('Successfully cleaned up orphaned associations');
+        }
+      }
+      
+      // Return only valid rooms (not orphaned)
+      const validRooms = combinedData.filter(item => !item.isOrphaned);
+      console.log('Final valid rooms:', validRooms);
+      
+      return validRooms;
     } catch (error) {
       console.error('Error fetching user rooms:', error);
       throw new Error(handleSupabaseError(error));
@@ -268,21 +300,65 @@ export const userRoomService = {
         return null;
       }
 
-      const { data, error } = await supabase
+      // Get all user room associations with room details to check for orphaned entries
+      const { data: userRoomData, error: userRoomError } = await supabase
         .from('user_rooms')
-        .select('role, joined_at, last_accessed')
+        .select('id, role, joined_at, last_accessed, sala_id')
         .eq('user_id', currentUser.id)
         .eq('is_active', true);
 
-      if (error) throw error;
+      if (userRoomError) throw userRoomError;
 
+      if (!userRoomData || userRoomData.length === 0) {
+        return {
+          totalRooms: 0,
+          adminRooms: 0,
+          memberRooms: 0,
+          studentRooms: 0,
+          lastJoined: null,
+          lastAccessed: null
+        };
+      }
+
+      // Check which rooms actually exist
+      const roomIds = userRoomData.map(ur => ur.sala_id);
+      const { data: existingRooms, error: roomsError } = await supabase
+        .from('salas')
+        .select('id')
+        .in('id', roomIds);
+
+      if (roomsError) throw roomsError;
+
+      const existingRoomIds = new Set(existingRooms.map(r => r.id));
+      
+      // Identify and clean up orphaned associations
+      const orphanedAssociations = userRoomData.filter(ur => !existingRoomIds.has(ur.sala_id));
+      if (orphanedAssociations.length > 0) {
+        console.log('Found orphaned associations in stats, cleaning up:', orphanedAssociations);
+        
+        const orphanedIds = orphanedAssociations.map(item => item.id);
+        const { error: deleteError } = await supabase
+          .from('user_rooms')
+          .delete()
+          .in('id', orphanedIds);
+          
+        if (deleteError) {
+          console.error('Error cleaning up orphaned associations in stats:', deleteError);
+        } else {
+          console.log('Successfully cleaned up orphaned associations in stats');
+        }
+      }
+
+      // Calculate stats based only on valid rooms
+      const validAssociations = userRoomData.filter(ur => existingRoomIds.has(ur.sala_id));
+      
       const stats = {
-        totalRooms: data.length,
-        adminRooms: data.filter(r => r.role === 'admin').length,
-        memberRooms: data.filter(r => r.role === 'member').length,
-        studentRooms: data.filter(r => r.role === 'student').length,
-        lastJoined: data.length > 0 ? new Date(Math.max(...data.map(r => new Date(r.joined_at)))) : null,
-        lastAccessed: data.length > 0 ? new Date(Math.max(...data.map(r => new Date(r.last_accessed)))) : null
+        totalRooms: validAssociations.length,
+        adminRooms: validAssociations.filter(r => r.role === 'admin').length,
+        memberRooms: validAssociations.filter(r => r.role === 'member').length,
+        studentRooms: validAssociations.filter(r => r.role === 'student').length,
+        lastJoined: validAssociations.length > 0 ? new Date(Math.max(...validAssociations.map(r => new Date(r.joined_at)))) : null,
+        lastAccessed: validAssociations.length > 0 ? new Date(Math.max(...validAssociations.map(r => new Date(r.last_accessed)))) : null
       };
 
       return stats;
