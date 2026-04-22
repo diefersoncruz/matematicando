@@ -139,6 +139,15 @@
         </div>
       </div>
 
+      <!-- Configuration Section -->
+      <div class="form-row">
+        <div class="form-group full-width">
+          <GameConfiguration 
+            v-model="gameConfig"
+          />
+        </div>
+      </div>
+
       <div class="form-actions">
         <button type="button" @click="cancel" class="btn btn-secondary">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -163,9 +172,14 @@
 
 <script>
 import { salasService } from '@/services/salasService.js';
+import { authService } from '@/services/authService.js';
+import GameConfiguration from '@/components/GameConfiguration.vue';
 
 export default {
   name: "SalaForm",
+  components: {
+    GameConfiguration
+  },
   
   data() {
     return {
@@ -175,6 +189,18 @@ export default {
         dataExpiracao: "",
         capacidade: "",
         tipo: "aula"
+      },
+      gameConfig: {
+        limiteTempo: 60,
+        limiteFatorA: 10,
+        limiteFatorB: 10,
+        limiteNegativoFatorA: 0,
+        limiteNegativoFatorB: 0,
+        operacoesDeAdicao: true,
+        operacoesDeSubtracao: true,
+        operacoesDeMultiplicacao: false,
+        operacoesDeDivisao: false,
+        exibirRespostaCerta: false
       },
       errors: {
         nome: null,
@@ -215,6 +241,13 @@ export default {
 
   methods: {
     async submitForm() {
+      // Check if user is authenticated
+      if (!authService.isAuthenticated()) {
+        alert('Você precisa estar logado para criar uma sala. Por favor, faça login primeiro.');
+        this.$router.push('/salas');
+        return;
+      }
+
       this.errors = {};
       this.submitting = true;
 
@@ -244,10 +277,14 @@ export default {
       }
 
       try {
-        // Create sala in Supabase
-        const novaSala = await salasService.createSala(this.sala);
+        // Combine sala data with game configuration
+        const salaData = {
+          ...this.sala,
+          ...this.gameConfig
+        };
         
-        console.log("Sala criada com sucesso:", novaSala);
+        // Create sala in Supabase
+        const novaSala = await salasService.createSala(salaData);
         
         // Show success message
         this.$emit('sala-created', novaSala);
@@ -456,6 +493,7 @@ export default {
   position: absolute;
   opacity: 0;
 }
+
 
 .radio-custom {
   width: 20px;

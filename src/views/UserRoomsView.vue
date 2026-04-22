@@ -7,7 +7,7 @@
         <p>Gerencie suas salas de matemática</p>
       </div>
       <div class="header-actions">
-        <button @click="showCreateRoom = true" class="btn btn-primary">
+        <button @click="handleCreateRoom" class="btn btn-primary">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
@@ -111,7 +111,7 @@
           </svg>
           Entrar em Sala
         </button>
-        <button @click="showCreateRoom = true" class="btn btn-secondary btn-large">
+        <button @click="handleCreateRoom" class="btn btn-secondary btn-large">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
@@ -353,6 +353,16 @@ const handleRoomJoined = async (room) => {
   } catch (err) {
     alert('Erro ao entrar na sala: ' + err.message);
   }
+};
+
+const handleCreateRoom = () => {
+  // Check if user is authenticated
+  if (!authService.isAuthenticated()) {
+    alert('Você precisa estar logado para criar uma sala. Por favor, faça login primeiro.');
+    showLoginModal.value = true;
+    return;
+  }
+  showCreateRoom.value = true;
 };
 
 const handleRoomCreated = async () => {

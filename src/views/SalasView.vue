@@ -210,12 +210,17 @@ export default {
     },
 
     criarNovaSala() {
+      // Check if user is authenticated
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+      if (!currentUser) {
+        alert('Você precisa estar logado para criar uma sala. Por favor, faça login primeiro.');
+        return;
+      }
       this.$router.push("/salas/criar");
     },
     
     viewSala(sala) {
-      console.log('Viewing sala:', sala);
-      // Future: Navigate to sala details page
+      this.$router.push(`/sala/${sala.id}/ranking`);
     },
     
     playInRoom(sala) {

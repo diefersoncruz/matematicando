@@ -7,7 +7,7 @@
         <router-link to="/jogo" class="nav-link">Jogo</router-link>
       </nav>
       
-      <UserProfile ref="userProfileRef" @show-login="showLoginModal = true" />
+      <UserProfile ref="userProfileRef" @show-login="showLoginModal = true" @logout-success="handleLogoutSuccess" />
     </header>
     
     <main class="main-content">
@@ -41,6 +41,13 @@ const handleLoginSuccess = () => {
   }
   showLoginModal.value = false;
 }
+
+const handleLogoutSuccess = () => {
+  // Update UserProfile to reflect logged-out state
+  if (userProfileRef.value) {
+    userProfileRef.value.updateUser();
+  }
+  };
 
 const permanent = ref(false);
 

@@ -116,40 +116,30 @@ const tempoFormatado = computed(() => {
 });
 
 const atualizarDados = (campo, valor = null) => {
-  console.log('atualizarDados called:', campo, '=', valor);
-  
   if (valor !== null) {
     if (campo === "acertos") {
       acertos.value = valor;
-      console.log('acertos updated to:', valor);
     }
     if (campo === "erros") {
       erros.value = valor;
-      console.log('erros updated to:', valor);
     }
     if (campo === "fator1") {
       fator1.value = valor;
-      console.log('fator1 updated to:', valor);
     }
     if (campo === "fator2") {
       fator2.value = valor;
-      console.log('fator2 updated to:', valor);
     }
     if (campo === "operador") {
       operador.value = valor;
-      console.log('operador updated to:', valor);
     }
     if (campo === "respostaUsuario") {
       respostaUsuario.value = valor;
-      console.log('respostaUsuario updated to:', valor);
     }
     if (campo === "jogoEmAndamento") {
       jogoEmAndamento.value = valor;
-      console.log('jogoEmAndamento updated to:', valor);
     }
     if (campo === "tempoSegundos") {
       tempoSegundos.value = valor;
-      console.log('tempoSegundos updated to:', valor);
     }
   }
   
@@ -171,12 +161,7 @@ const handleDocumentKeydown = (event) => {
 };
 
 const toggleJogo = () => {
-  console.log('toggleJogo called - jogoEmAndamento:', jogoEmAndamento.value);
-  console.log('User authenticated:', authService.isAuthenticated());
-  console.log('Selected room:', selectedRoom.value);
-  
   if (jogoEmAndamento.value) {
-    console.log('Stopping game...');
     pararJogo(true, atualizarDados);
     clearInterval(intervaloCronometro.value);
     intervaloCronometro.value = null;
@@ -184,20 +169,16 @@ const toggleJogo = () => {
     // Save score when game ends
     saveGameScore();
   } else {
-    console.log('Starting game...');
     // Check if user is authenticated
     if (authService.isAuthenticated()) {
       // Authenticated users can play with or without room
       if (!selectedRoom.value) {
-        console.log('No room selected for authenticated user, showing room selection');
         showRoomSelection.value = true;
         return;
       }
-      console.log('Authenticated user starting game with room:', selectedRoom.value.id);
       iniciarJogo(atualizarDados, selectedRoom.value.id);
     } else {
       // Anonymous users play without room (default settings)
-      console.log('Anonymous user starting game with default settings');
       iniciarJogo(atualizarDados, null);
     }
     
@@ -267,7 +248,7 @@ const rankingRef = ref(null);
 const saveGameScore = async () => {
   if (!selectedRoom.value) return;
   
-  const playerName = authService.getCurrentUsername();
+  const playerName = authService.getCurrentName() || authService.getCurrentUsername();
   
   try {
     await rankingService.savePlayerScore(
@@ -285,7 +266,6 @@ const saveGameScore = async () => {
       }, 500); // Small delay to ensure score is saved
     }
   } catch (error) {
-    console.error('Error saving game score:', error);
     // Don't show error to user to avoid interrupting game flow
   }
 };
@@ -306,7 +286,6 @@ onMounted(() => {
     try {
       selectedRoom.value = JSON.parse(savedRoom);
     } catch (error) {
-      console.error('Error parsing saved room:', error);
       localStorage.removeItem('currentRoom');
     }
   }

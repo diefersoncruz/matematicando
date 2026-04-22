@@ -151,119 +151,9 @@
           <!-- Configuration Section -->
           <div class="form-row">
             <div class="form-group full-width">
-              <label class="form-label">
-                Configurações do Jogo
-              </label>
-              <div class="config-section">
-                <div class="config-row">
-                  <div class="config-item">
-                    <label for="limiteTempo" class="config-label">Tempo Limite (segundos)</label>
-                    <input 
-                      type="number" 
-                      id="limiteTempo" 
-                      v-model="configuracao.limiteTempo"
-                      class="config-input"
-                      min="10"
-                      max="300"
-                    />
-                  </div>
-                  <div class="config-item">
-                    <label for="limiteFatorA" class="config-label">Limite Fator A</label>
-                    <input 
-                      type="number" 
-                      id="limiteFatorA" 
-                      v-model="configuracao.limiteFatorA"
-                      class="config-input"
-                      min="1"
-                      max="1000"
-                    />
-                  </div>
-                  <div class="config-item">
-                    <label for="limiteFatorB" class="config-label">Limite Fator B</label>
-                    <input 
-                      type="number" 
-                      id="limiteFatorB" 
-                      v-model="configuracao.limiteFatorB"
-                      class="config-input"
-                      min="1"
-                      max="1000"
-                    />
-                  </div>
-                </div>
-                
-                <div class="config-row">
-                  <div class="config-item">
-                    <label for="limiteNegativoA" class="config-label">Limite Negativo Fator A</label>
-                    <input 
-                      type="number" 
-                      id="limiteNegativoA" 
-                      v-model="configuracao.limiteNegativoFatorA"
-                      class="config-input"
-                      min="0"
-                      max="1000"
-                    />
-                  </div>
-                  <div class="config-item">
-                    <label for="limiteNegativoB" class="config-label">Limite Negativo Fator B</label>
-                    <input 
-                      type="number" 
-                      id="limiteNegativoB" 
-                      v-model="configuracao.limiteNegativoFatorB"
-                      class="config-input"
-                      min="0"
-                      max="1000"
-                    />
-                  </div>
-                </div>
-
-                <div class="config-row">
-                  <div class="config-item full-width">
-                    <label class="config-label">Operações Permitidas</label>
-                    <div class="operations-grid">
-                      <label class="operation-checkbox">
-                        <input 
-                          type="checkbox" 
-                          v-model="configuracao.operacoesPermitidas.operacoesDeAdicao"
-                        />
-                        <span>Adição (+)</span>
-                      </label>
-                      <label class="operation-checkbox">
-                        <input 
-                          type="checkbox" 
-                          v-model="configuracao.operacoesPermitidas.operacoesDeSubtracao"
-                        />
-                        <span>Subtração (-)</span>
-                      </label>
-                      <label class="operation-checkbox">
-                        <input 
-                          type="checkbox" 
-                          v-model="configuracao.operacoesPermitidas.operacoesDeMultiplicacao"
-                        />
-                        <span>Multiplicação (×)</span>
-                      </label>
-                      <label class="operation-checkbox">
-                        <input 
-                          type="checkbox" 
-                          v-model="configuracao.operacoesPermitidas.operacoesDeDivisao"
-                        />
-                        <span>Divisão (÷)</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="config-row">
-                  <div class="config-item">
-                    <label class="operation-checkbox">
-                      <input 
-                        type="checkbox" 
-                        v-model="configuracao.exibicao.exibirRespostaCerta"
-                      />
-                      <span>Exibir Resposta Correta</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
+              <GameConfiguration 
+                v-model="gameConfig"
+              />
             </div>
           </div>
 
@@ -292,10 +182,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { salasService } from '@/services/salasService.js';
-import { userRoomService } from '@/services/userRoomService.js';
 import { authService } from '@/services/authService.js';
+import { userRoomService } from '@/services/userRoomService.js';
+import GameConfiguration from '@/components/GameConfiguration.vue';
 
 // Props
 const props = defineProps({
@@ -318,21 +209,17 @@ const sala = ref({
   tipo: "aula"
 });
 
-const configuracao = ref({
+const gameConfig = ref({
   limiteTempo: 60,
   limiteFatorA: 10,
   limiteFatorB: 10,
   limiteNegativoFatorA: 0,
   limiteNegativoFatorB: 0,
-  operacoesPermitidas: {
-    operacoesDeAdicao: true,
-    operacoesDeSubtracao: true,
-    operacoesDeMultiplicacao: true,
-    operacoesDeDivisao: true
-  },
-  exibicao: {
-    exibirRespostaCerta: false
-  }
+  operacoesDeAdicao: true,
+  operacoesDeSubtracao: true,
+  operacoesDeMultiplicacao: true,
+  operacoesDeDivisao: true,
+  exibirRespostaCerta: false
 });
 const errors = ref({
   nome: null,
@@ -406,22 +293,28 @@ const validateForm = () => {
 };
 
 const submitForm = async () => {
+  // Check if user is authenticated
+  if (!authService.isAuthenticated()) {
+    alert('Você precisa estar logado para criar uma sala. Por favor, faça login primeiro.');
+    closeModal();
+    return;
+  }
+
   if (!validateForm()) return;
   
   submitting.value = true;
   
   try {
-    console.log('Creating room with data:', sala.value);
-    console.log('Configuration:', configuracao.value);
+    
+    // Combine sala data with game configuration
+    const salaData = {
+      ...sala.value,
+      ...gameConfig.value
+    };
     
     // Create the room
-    const createdSala = await salasService.createSala(sala.value);
+    const createdSala = await salasService.createSala(salaData);
     console.log('Room created successfully:', createdSala);
-    
-    // Save room configuration
-    const { roomConfigurationService } = await import('@/services/roomConfigurationService.js');
-    await roomConfigurationService.saveRoomConfiguration(createdSala.id, configuracao.value);
-    console.log('Room configuration saved successfully');
     
     // Get current user
     const currentUser = authService.getCurrentUser();
