@@ -120,19 +120,10 @@ function gerarOperacao(atualizarDados) {
 
 function gerarFatores(operador) {
   let fator1, fator2;
-  console.log('=== gerarFatores Debug ===');
-  console.log('Operador:', operador);
-  console.log('Configurações atuais:', configuracoes);
-  console.log('limiteNegativoFatorA:', configuracoes.limiteNegativoFatorA);
-  console.log('limiteFatorA:', configuracoes.limiteFatorA);
-  console.log('limiteNegativoFatorB:', configuracoes.limiteNegativoFatorB);
-  console.log('limiteFatorB:', configuracoes.limiteFatorB);
   
   // Verificar se os limites permitem números negativos
   const permiteNegativosA = configuracoes.limiteNegativoFatorA < 0;
   const permiteNegativosB = configuracoes.limiteNegativoFatorB < 0;
-  console.log('Permite negativos A:', permiteNegativosA);
-  console.log('Permite negativos B:', permiteNegativosB);
   
   do {
     fator1 = getRandomInt(
@@ -144,8 +135,6 @@ function gerarFatores(operador) {
       configuracoes.limiteFatorB
     );
     
-    console.log('Fatores gerados:', { fator1, fator2 });
-
     if (operador === 1 && fator2 !== 0) {
       fator1 =
         fator2 *

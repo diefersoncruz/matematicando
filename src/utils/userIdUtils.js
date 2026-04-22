@@ -10,8 +10,6 @@ export const userIdUtils = {
         return null;
       }
       
-      console.log('Current user ID from localStorage:', currentUser.id);
-      console.log('Current user data:', currentUser);
       
       return currentUser.id;
     } catch (error) {
@@ -56,31 +54,10 @@ export const userIdUtils = {
       return null;
     }
     
-    console.log('User ID validation passed:', userId);
     return userId;
   },
 
   // Debug user ID storage and retrieval
   debugUserIdStorage() {
-    console.log('=== User ID Storage Debug ===');
-    
-    // Check localStorage
-    const localStorageUser = localStorage.getItem('currentUser');
-    console.log('Raw localStorage user:', localStorageUser);
-    
-    if (localStorageUser) {
-      try {
-        const parsedUser = JSON.parse(localStorageUser);
-        console.log('Parsed localStorage user:', parsedUser);
-        console.log('User ID type:', typeof parsedUser.id);
-        console.log('User ID value:', parsedUser.id);
-      } catch (error) {
-        console.error('Error parsing localStorage user:', error);
-      }
-    } else {
-      console.log('No user found in localStorage');
-    }
-    
-    console.log('=== End User ID Storage Debug ===');
   }
 };

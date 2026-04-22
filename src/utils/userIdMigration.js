@@ -6,8 +6,7 @@ export const userIdMigration = {
   // Check if user needs migration (has old user_rooms but no current ones)
   async needsMigration(currentUserId, username) {
     try {
-      console.log('=== Checking if user needs migration ===');
-      
+        
       // Check if user has any current room associations
       const { data: currentRooms, error: currentError } = await supabase
         .from('user_rooms')
@@ -20,11 +19,9 @@ export const userIdMigration = {
         return false;
       }
 
-      console.log('Current rooms for user:', currentRooms?.length || 0);
 
       // If user has current rooms, no migration needed
       if (currentRooms && currentRooms.length > 0) {
-        console.log('User already has room associations, no migration needed');
         return false;
       }
 
@@ -39,7 +36,6 @@ export const userIdMigration = {
         return false;
       }
 
-      console.log('Total user_rooms entries found:', allRooms?.length || 0);
 
       // If there are rooms but user has none, migration might be needed
       return (allRooms && allRooms.length > 0);
@@ -53,10 +49,7 @@ export const userIdMigration = {
   // Migrate existing room associations to current user ID
   async migrateUserId(currentUserId, username) {
     try {
-      console.log('=== Starting user ID migration ===');
-      console.log('Current user ID:', currentUserId);
-      console.log('Username:', username);
-
+  
       // Get all user_rooms entries that don't belong to current user
       const { data: otherUserRooms, error: otherError } = await supabase
         .from('user_rooms')
@@ -68,17 +61,14 @@ export const userIdMigration = {
         return false;
       }
 
-      console.log('Found other user rooms:', otherUserRooms?.length || 0);
 
       if (!otherUserRooms || otherUserRooms.length === 0) {
-        console.log('No other user rooms found to migrate');
         return true;
       }
 
       // For this simple case, we'll migrate the first found room
       // In production, you'd want better logic to match the correct user
       const roomToMigrate = otherUserRooms[0];
-      console.log('Migrating room:', roomToMigrate);
 
       // Update the room to belong to current user
       const { data: updatedRoom, error: updateError } = await supabase
@@ -91,13 +81,9 @@ export const userIdMigration = {
         .single();
 
       if (updateError) {
-        console.error('Error updating room:', updateError);
         return false;
       }
 
-      console.log('Successfully migrated room:', updatedRoom);
-      console.log('=== User ID migration completed ===');
-      
       return true;
       
     } catch (error) {
@@ -116,8 +102,7 @@ export const userIdMigration = {
         const migrationSuccess = await this.migrateUserId(currentUserId, username);
         
         if (migrationSuccess) {
-          console.log('Auto-migration completed successfully');
-          return true;
+                return true;
         } else {
           console.error('Auto-migration failed');
           return false;
