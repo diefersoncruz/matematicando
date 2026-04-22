@@ -13,18 +13,39 @@
 
       <div class="modal-body">
         <form @submit.prevent="handleSubmit">
-          <div class="form-group">
-            <label for="username">Nome de Usuário</label>
+          <div class="form-group" v-if="!isLogin">
+            <label for="name">Nome Completo</label>
             <input
-              id="username"
-              v-model="formData.username"
+              id="name"
+              v-model="formData.name"
               type="text"
               required
-              placeholder="Digite seu nome de usuário"
+              placeholder="Digite seu nome completo"
               class="form-input"
             />
           </div>
 
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              id="email"
+              v-model="formData.email"
+              @blur="checkEmailAvailability"
+              type="email"
+              required
+              placeholder="Digite seu email"
+              class="form-input"
+              :class="{ 'input-error': emailError }"
+            />
+            <div class="error-message small" v-if="emailError">
+              {{ emailError }}
+            </div>
+            <div class="checking-message" v-if="checkingEmail">
+              Verificando email...
+            </div>
+          </div>
+
+          
           <div class="form-group">
             <label for="password">Senha</label>
             <input
@@ -40,7 +61,6 @@
           <div class="form-group" v-if="!isLogin">
             <label for="confirmPassword">Confirmar Senha</label>
             <input
-              id="confirmPassword"
               v-model="formData.confirmPassword"
               type="password"
               required
@@ -89,10 +109,14 @@ const isLogin = ref(true);
 const loading = ref(false);
 const error = ref(null);
 const formData = reactive({
-  username: '',
+  name: '',
+  email: '',
   password: '',
   confirmPassword: ''
 });
+
+const emailError = ref('');
+const checkingEmail = ref(false);
 
 // Methods
 const closeModal = () => {
@@ -100,8 +124,31 @@ const closeModal = () => {
   resetForm();
 };
 
+// Check email availability
+const checkEmailAvailability = async () => {
+  if (!formData.email || !formData.email.includes('@') || isLogin.value) {
+    emailError.value = '';
+    return;
+  }
+
+  checkingEmail.value = true;
+  emailError.value = '';
+
+  try {
+    const exists = await authService.checkEmailExists(formData.email);
+    if (exists) {
+      emailError.value = 'Este email já está cadastrado';
+    }
+  } catch (error) {
+    console.error('Error checking email:', error);
+  } finally {
+    checkingEmail.value = false;
+  }
+};
+
 const resetForm = () => {
-  formData.username = '';
+  formData.name = '';
+  formData.email = '';
   formData.password = '';
   formData.confirmPassword = '';
   error.value = null;
@@ -114,19 +161,37 @@ const toggleMode = () => {
 };
 
 const validateForm = () => {
-  if (formData.username.length < 3) {
-    error.value = 'O nome de usuário deve ter pelo menos 3 caracteres';
+  // Validate email for both login and registration
+  if (!formData.email || !formData.email.includes('@')) {
+    error.value = 'Por favor, insira um email válido';
     return false;
   }
 
+  // Check if email is already taken (only for registration)
+  if (!isLogin.value && emailError.value) {
+    error.value = emailError.value;
+    return false;
+  }
+
+  // Validate password
   if (formData.password.length < 4) {
     error.value = 'A senha deve ter pelo menos 4 caracteres';
     return false;
   }
 
-  if (!isLogin.value && formData.password !== formData.confirmPassword) {
-    error.value = 'As senhas não coincidem';
-    return false;
+  // Additional validations for registration
+  if (!isLogin.value) {
+    // Validate name
+    if (!formData.name || formData.name.length < 2) {
+      error.value = 'O nome deve ter pelo menos 2 caracteres';
+      return false;
+    }
+
+    // Validate password confirmation
+    if (formData.password !== formData.confirmPassword) {
+      error.value = 'As senhas não coincidem';
+      return false;
+    }
   }
 
   return true;
@@ -140,18 +205,21 @@ const handleSubmit = async () => {
 
   try {
     console.log('LoginModal: Starting authentication process...');
-    console.log('LoginModal: Form data:', { username: formData.username });
+    console.log('LoginModal: Form data:', { 
+      name: formData.name,
+      email: formData.email
+    });
     
     let result;
     
     if (isLogin.value) {
       // Login - apenas autentica usuário existente
       console.log('LoginModal: Attempting login...');
-      result = await authService.loginUser(formData.username, formData.password);
+      result = await authService.loginUser(formData.email, formData.password);
     } else {
       // Register - cria novo usuário
       console.log('LoginModal: Attempting registration...');
-      result = await authService.registerUser(formData.username, formData.password);
+      result = await authService.registerUser(formData.name, formData.email, formData.password);
     }
 
     console.log('LoginModal: Authentication successful:', result);
@@ -245,13 +313,41 @@ const handleSubmit = async () => {
   border: 2px solid #e5e7eb;
   border-radius: 8px;
   font-size: 16px;
-  transition: all 0.2s;
-  outline: none;
+  transition: border-color 0.2s;
 }
 
 .form-input:focus {
+  outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-input.input-error {
+  border-color: #dc2626;
+}
+
+.form-input.input-error:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.error-message.small {
+  font-size: 12px;
+  margin-top: 4px;
+  margin-bottom: 0;
+  padding: 4px 8px;
+  background: #fef2f2;
+  color: #dc2626;
+  border-radius: 4px;
+  border: 1px solid #fecaca;
+}
+
+.checking-message {
+  font-size: 12px;
+  margin-top: 4px;
+  margin-bottom: 0;
+  color: #6b7280;
+  font-style: italic;
 }
 
 .form-input::placeholder {

@@ -4,29 +4,88 @@ import { supabase, handleSupabaseError } from './supabase.js';
 console.log('authService.js loaded - version 2025-04-21-01-45');
 
 export const authService = {
-  // Register a new user
-  async register(username, password) {
+  // Check if email already exists
+  async checkEmailExists(email) {
     try {
+      const { data, error } = await supabase.rpc('check_email_exists', {
+        p_email: email
+      });
+
+      if (error) throw error;
+      return data; // Returns true if email exists, false otherwise
+    } catch (error) {
+      console.error('Error checking email existence:', error);
+      return false;
+    }
+  },
+
+  // Register a new user
+  async registerUser(name, email, password) {
+    try {
+      // Check if email already exists in our custom table
+      const emailExists = await this.checkEmailExists(email);
+      if (emailExists) {
+        throw new Error('Este email já está cadastrado. Por favor, use outro email.');
+      }
+
       // First, create a Supabase auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: `${username}@matematicando.local`, // Use username as email for simplicity
+        email: email,
         password: password,
         options: {
           data: {
-            username: username
+            name: name
           }
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        // Handle Supabase auth errors for duplicate email
+        if (authError.message.includes('already registered') || authError.message.includes('already been registered')) {
+          throw new Error('Este email já está cadastrado. Por favor, use outro email.');
+        }
+        throw authError;
+      }
 
       // Then create the user record in our custom table
-      const { data, error } = await supabase.rpc('create_user', {
-        p_username: username,
+      const { data, error } = await supabase.rpc('create_user_with_details', {
+        p_name: name,
+        p_email: email,
+        p_username: email.split('@')[0], // Use email prefix as username for compatibility
         p_password: password
       });
+      
+      console.log('=== Database Debug ===');
+      console.log('Creating user with params:', {
+        p_name: name,
+        p_email: email,
+        p_username: email.split('@')[0]
+      });
 
-      if (error) throw error;
+      if (error) {
+        // Handle database constraint error for duplicate email
+        if (error.message.includes('Email já está em uso')) {
+          throw new Error('Este email já está cadastrado. Por favor, use outro email.');
+        }
+        throw error;
+      }
+
+      // Store user info in localStorage after successful registration
+      if (authData.user) {
+        const currentUser = {
+          id: authData.user.id,
+          username: email.split('@')[0], // Use email prefix as username
+          email: email,
+          name: name, // Ensure name is stored correctly
+          created_at: new Date().toISOString()
+        };
+        
+        console.log('=== authService Registration Debug ===');
+        console.log('User data stored after registration:', currentUser);
+        console.log('Name stored:', currentUser.name);
+        
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+      }
 
       return {
         user: authData.user,
@@ -34,16 +93,13 @@ export const authService = {
       };
     } catch (error) {
       console.error('Error registering user:', error);
-      throw new Error(handleSupabaseError(error));
+      throw new Error(error.message || 'Ocorreu um erro ao cadastrar usuário. Tente novamente.');
     }
   },
 
   // Login user
-  async login(username, password) {
+  async loginUser(email, password) {
     try {
-      // Use email format for Supabase auth
-      const email = `${username}@matematicando.local`;
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email,
         password: password
@@ -51,29 +107,21 @@ export const authService = {
 
       if (error) throw error;
 
-      // Store user info in localStorage with consistent ID based on username
+      // Store user info in localStorage
       if (data.user) {
-        // Generate consistent ID based on username (not Supabase UUID)
-        const consistentId = `user-${username.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+        const currentUser = {
+          id: data.user.id,
+          username: email.split('@')[0], // Use email prefix as username
+          email: email,
+          name: data.user.user_metadata?.name || '',
+          created_at: new Date().toISOString()
+        };
         
         console.log('=== authService Login Debug ===');
-        console.log('Username:', username);
-        console.log('Supabase user ID:', data.user.id);
-        console.log('Generated consistent ID:', consistentId);
+        console.log('Email used for login:', email);
+        console.log('User data stored:', currentUser);
         
-        localStorage.setItem('currentUser', JSON.stringify({
-          id: consistentId,
-          username: username,
-          email: data.user.email,
-          supabaseId: data.user.id // Keep Supabase ID for reference if needed
-        }));
-        
-        console.log('Stored in localStorage:', {
-          id: consistentId,
-          username: username,
-          email: data.user.email
-        });
-        console.log('=== End authService Login Debug ===');
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
       }
 
       return data;
@@ -123,7 +171,28 @@ export const authService = {
   // Get current username
   getCurrentUsername() {
     const user = this.getCurrentUser();
+    console.log('=== getCurrentUsername Debug ===');
+    console.log('User data:', user);
+    console.log('Username:', user ? user.username : 'Jogador Anônimo');
     return user ? user.username : 'Jogador Anônimo';
+  },
+
+  // Get current name
+  getCurrentName() {
+    const user = this.getCurrentUser();
+    console.log('=== getCurrentName Debug ===');
+    console.log('User data:', user);
+    console.log('Name:', user ? user.name : '');
+    return user ? user.name : '';
+  },
+
+  // Get current email
+  getCurrentEmail() {
+    const user = this.getCurrentUser();
+    console.log('=== getCurrentEmail Debug ===');
+    console.log('User data:', user);
+    console.log('Email:', user ? user.email : '');
+    return user ? user.email : '';
   },
 
   // Update user profile
@@ -206,58 +275,7 @@ export const authService = {
     }
   },
 
-  // Register user - cria novos usuários
-  async registerUser(username, password) {
-    try {
-      // Simple hash function for demo (in production use proper hashing)
-      const hashPassword = (pwd) => btoa(pwd + 'salt');
-      
-      // First, check if user already exists
-      const { data: existingUser, error: userError } = await supabase
-        .from('users')
-        .select('id, username')
-        .eq('username', username)
-        .single();
-
-      if (existingUser) {
-        throw new Error('Este nome de usuário já está em uso. Escolha outro.');
-      }
-
-      // User doesn't exist, create new user
-      const hashedPassword = hashPassword(password);
-      
-      const { data: newUser, error: createError } = await supabase
-        .from('users')
-        .insert([{
-          username: username,
-          password_hash: hashedPassword,
-          created_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
-
-      if (createError) {
-        console.error('Erro ao criar usuário:', createError);
-        throw createError;
-      }
-
-      console.log('Novo usuário criado:', newUser);
-      const user = {
-        id: newUser.id,
-        username: newUser.username,
-        email: `${username}@matematicando.local`
-      };
-
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      console.log('Cadastro bem-sucedido:', user);
-      
-      return { user };
-    } catch (error) {
-      console.error('Erro no cadastro:', error);
-      throw error;
-    }
-  },
-
+  
   // Simple authentication (for demo purposes) - mantido para compatibilidade
   async simpleAuth(username, password) {
     try {

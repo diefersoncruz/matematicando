@@ -52,7 +52,7 @@
               <polyline points="7 3 7 8 15 8"/>
             </svg>
           </div>
-          <h3>Olá, {{ authService.getCurrentUsername() }}!</h3>
+          <h3>Olá, {{ authService.getCurrentName() || authService.getCurrentUsername() }}!</h3>
           <p>Selecione uma sala para ver o ranking e jogar com configurações personalizadas.</p>
           <div class="room-actions">
             <button @click="$emit('change-room')" class="btn btn-small btn-primary">

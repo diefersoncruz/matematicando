@@ -267,7 +267,7 @@ const rankingRef = ref(null);
 const saveGameScore = async () => {
   if (!selectedRoom.value) return;
   
-  const playerName = authService.getCurrentUsername();
+  const playerName = authService.getCurrentName() || authService.getCurrentUsername();
   
   try {
     await rankingService.savePlayerScore(
